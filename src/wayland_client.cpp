@@ -1,8 +1,6 @@
 #include "wayland_client.hpp"
 
-#include <cstring>
 #include <stdexcept>
-#include <string>
 
 #include <wayland-client.h>
 #include <wayland-client-protocol.h>
@@ -10,37 +8,40 @@
 
 #include "utils/logger.hpp"
 
-void shell_ping(void *data, struct xdg_wm_base *shell, uint32_t serial) 
-{
-    xdg_wm_base_pong(shell, serial);
-}
-const struct xdg_wm_base_listener shell_listener = 
-{
-    .ping = shell_ping
-};
-
 namespace tobi_engine
 {
 
-    void registry_global(void *data, struct wl_registry *registry, uint32_t name, const char *interface, uint32_t version) 
+    void shell_ping(void *data, xdg_wm_base *shell, uint32_t serial) 
+    {
+        xdg_wm_base_pong(shell, serial);
+    }
+    const struct xdg_wm_base_listener shell_listener = 
+    {
+        .ping = shell_ping
+    };
+
+    void registry_global(void *data, wl_registry *registry, uint32_t name, const char *interface, uint32_t version) 
     {
         auto window = (WaylandClient*)data;
-        if (std::strcmp(interface, wl_compositor_interface.name) == 0) 
+        
+        auto interface_name = std::string(interface);
+
+        if (interface_name.compare(wl_compositor_interface.name) == 0) 
         {
-            auto compositor = (struct wl_compositor*)wl_registry_bind(registry, name, &wl_compositor_interface, 4);
+            auto compositor = (wl_compositor*)wl_registry_bind(registry, name, &wl_compositor_interface, 4);
             window->set_compositor(compositor);
             // Debug log for compositor registration
             Logger::debug("added compositor to registry");
         }
-        else if (std::strcmp(interface, wl_shm_interface.name) == 0) 
+        else if (interface_name.compare(wl_shm_interface.name) == 0) 
         {
-            auto shm = (struct wl_shm*)wl_registry_bind(registry, name, &wl_shm_interface, 1);
+            auto shm = (wl_shm*)wl_registry_bind(registry, name, &wl_shm_interface, 1);
             window->set_shm(shm);
             Logger::debug("added shm to registry");
         }
-        else if (std::strcmp(interface, xdg_wm_base_interface.name) == 0) 
+        else if (interface_name.compare(xdg_wm_base_interface.name) == 0) 
         {
-            auto shell = (struct xdg_wm_base*)wl_registry_bind(registry, name, &xdg_wm_base_interface, 1);
+            auto shell = (xdg_wm_base*)wl_registry_bind(registry, name, &xdg_wm_base_interface, 1);
             xdg_wm_base_add_listener(shell, &shell_listener, 0);
             window->set_shell(shell);
             Logger::debug("added shell to registry");
@@ -51,12 +52,12 @@ namespace tobi_engine
     // }
     }
 
-    void registry_global_remove(void *data, struct wl_registry *registry, uint32_t name) {
+    void registry_global_remove(void *data, wl_registry *registry, uint32_t name) {
 
         // This function will be called when a global object is removed from the registry
         Logger::debug("Global object removed: name " + std::to_string(name));
     }
-    static const struct wl_registry_listener registry_listener = 
+    const struct wl_registry_listener registry_listener = 
     {
         .global = registry_global,
         .global_remove = registry_global_remove
@@ -83,6 +84,11 @@ namespace tobi_engine
     }
 
     WaylandClient::WaylandClient()
+        :   display(nullptr),
+            registry(nullptr),
+            compositor(nullptr),
+            shell(nullptr),
+            shm(nullptr)
     {
         initialize();
     }

@@ -1,30 +1,22 @@
 #include "wayland_window.hpp"
 
-#include <cstring>
-#include <wayland-client-core.h>
-#include <wayland-client-protocol.h>
-
-#include <iostream>
-#include <random>
-#include <sstream>
-
+#include <memory>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 
+#include <wayland-client.h>
+#include "xdg-shell-client-protocol.h"
+
+#include "shared_memory.hpp"
 #include "utils/logger.hpp"
-#include "wayland_client.hpp"
-#include "wayland_util.hpp"
-
 #include "utils/utils.hpp"
-
+#include "wayland_client.hpp"
 
 
 namespace tobi_engine
 {
-
-
 
 //void keyboard_map(void *data, struct wl_keyboard* keyboard, uint32_t format, int32_t fd, uint32_t size) {
 //
@@ -90,6 +82,8 @@ namespace tobi_engine
 //    .name = seat_name
 //};
 
+namespace 
+{
 void xdg_surface_configure(void *data, struct xdg_surface *xdg_surface, uint32_t serial) {
 
     auto window = (MyWindow*)data;
@@ -102,6 +96,11 @@ void xdg_surface_configure(void *data, struct xdg_surface *xdg_surface, uint32_t
     }
     window->draw();
 }
+
+const struct xdg_surface_listener xdg_surface_listener = 
+{
+    .configure = xdg_surface_configure
+};
 
 void toplevel_configure(void *data, struct xdg_toplevel *toplevel, int32_t new_width, int32_t new_height, struct wl_array* states) {
 
@@ -116,8 +115,21 @@ void toplevel_configure(void *data, struct xdg_toplevel *toplevel, int32_t new_w
 void toplevel_close(void* data, struct xdg_toplevel *toplevel) {
 
     Logger::debug("toplevel_close()");
-    is_closed = 1;
+    auto window = (MyWindow*)data;
+    window->close_window();
 }
+const struct xdg_toplevel_listener toplevel_listener = 
+{
+    .configure = toplevel_configure,
+    .close = toplevel_close
+};
+
+void frame_new(void* data, struct wl_callback* callback, uint32_t callback_data);
+
+const struct wl_callback_listener callback_listener = 
+{
+    .done = frame_new
+};
 
 
 void frame_new(void* data, struct wl_callback* callback, uint32_t callback_data) {
@@ -129,74 +141,40 @@ void frame_new(void* data, struct wl_callback* callback, uint32_t callback_data)
     
     window->set_callback(callback);
 
-    colour++;
     window->draw();
 }
-
-class SharedMemory
-{
-    public:
-        SharedMemory(uint32_t size) { resize(size); };
-        ~SharedMemory() { close(file_descriptor); }
-
-        int32_t get_fd() { return file_descriptor; }
-        void resize(uint32_t size) 
-        { 
-            if(size == this->size) 
-                return;
-            close(file_descriptor);
-            allocate_shm(size);
-        }
-    private:
-        int32_t file_descriptor;
-        uint32_t size;
-        
-        void allocate_shm(uint64_t size) 
-        {
-            // create random filename
-            std::string name = "/window-handle-" + generate_random_string(10);
-
-            Logger::debug("Created SHM: " + name);
-
-            file_descriptor = memfd_create(name.c_str(), 0);
-            if(file_descriptor == -1)
-                throw std::runtime_error("Failed to open file " + name);
-            
-            shm_unlink(name.c_str());
-
-            if(ftruncate(file_descriptor, size) == -1)
-            {   
-                close(file_descriptor);
-                throw std::runtime_error("Failed to truncate file " + name);
-            }
-        }
-};
+    
+}
 
 void MyWindow::update()
 {
-    WaylandClient::get_instance()->update();
+    client->update();
 }
 
-void MyWindow::init()
+void MyWindow::initialize()
 {
-    auto wl_client = tobi_engine::WaylandClient::get_instance();
-
-    surface = wl_compositor_create_surface(wl_client->get_compositor());
+    surface = wl_compositor_create_surface(client->get_compositor());
 
     callback = wl_surface_frame(surface);
     wl_callback_add_listener(callback, &callback_listener, this);
 
-    x_surface = xdg_wm_base_get_xdg_surface(wl_client->get_shell(), surface);
+    x_surface = xdg_wm_base_get_xdg_surface(client->get_shell(), surface);
     xdg_surface_add_listener(x_surface, &xdg_surface_listener, this);
 
-    x_top = xdg_surface_get_toplevel(x_surface);
-    xdg_toplevel_add_listener(x_top, &toplevel_listener, this);
-    xdg_toplevel_set_title(x_top, "My test window: Wayland");
+    x_toplevel = xdg_surface_get_toplevel(x_surface);
+    xdg_toplevel_add_listener(x_toplevel, &toplevel_listener, this);
+    xdg_toplevel_set_title(x_toplevel, "My test window: Wayland");
 
     wl_surface_commit(surface);
 
 }
 
+MyWindow::MyWindow()
+    :   client(WaylandClient::get_instance()),
+        shared_memory(std::make_shared<SharedMemory>(0))
+{
+    initialize();
+}
 void MyWindow::resize(uint16_t w, uint16_t h)
 {
     if (width == w && height == h) 
@@ -208,32 +186,50 @@ void MyWindow::resize(uint16_t w, uint16_t h)
 }
 void MyWindow::resize()
 {
-    auto client = WaylandClient::get_instance();
     Logger::debug("resize()");
-    auto shared = SharedMemory(width * height * 4);
-    int32_t fd = shared.get_fd();
-    //int32_t fd = allocate_shm(width * height * 4);
 
-    pixels = (uint8_t*)mmap(0, width * height * 4, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    const uint32_t buffer_size = width * height * 4;
+    shared_memory->resize(buffer_size);
 
-    struct wl_shm_pool *pool = wl_shm_create_pool(client->get_shm(), fd, width * height * 4);
-    if (!pool) {
-        close(fd);
-        throw std::runtime_error("Failed to create Wayland SHM pool");
+    create_shared_memory();
+    create_buffer();
+}
+
+void MyWindow::create_shared_memory()
+{
+    const uint32_t buffer_size = width * height * 4;
+    pixels = static_cast<uint8_t*>(mmap(nullptr, buffer_size,
+                                                PROT_READ | PROT_WRITE,
+                                                MAP_SHARED, shared_memory->get_fd(), 0));
+    if (pixels == MAP_FAILED)
+    {
+        throw std::runtime_error("Failed to map shared memory.");
+    }
+}
+
+void MyWindow::create_buffer()
+{
+    const uint32_t buffer_size = width * height * 4;
+    wl_shm_pool* pool = wl_shm_create_pool(client->get_shm(), shared_memory->get_fd(), buffer_size);
+    if (!pool)
+    {
+        munmap(pixels, buffer_size);
+        throw std::runtime_error("Failed to create Wayland SHM pool.");
     }
     buffer = wl_shm_pool_create_buffer(pool, 0, width, height, width * 4, WL_SHM_FORMAT_ARGB8888);
-    if (!buffer) {
-        wl_shm_pool_destroy(pool);
-        close(fd);
-        throw std::runtime_error("Failed to create Wayland buffer");
-    }
     wl_shm_pool_destroy(pool);
-    //close(fd);
+    if (!buffer)
+    {
+        munmap(pixels, buffer_size);
+        throw std::runtime_error("Failed to create Wayland buffer.");
+    }
 }
 
 void MyWindow::draw()
 {   
-    memset(pixels, colour, width*height*4);
+    colour++;
+    //std::memset(pixels, colour, width*height*4);
+    std::fill(pixels, pixels + width*height*4, colour);
     //memset(pixels, colour, width*height*4);
     wl_surface_attach(surface, buffer, 0, 0);
     wl_surface_damage(surface, 0, 0, width, height);
@@ -242,16 +238,18 @@ void MyWindow::draw()
 
 void MyWindow::destroy()
 {
-    if(pixels) {
+    if(pixels && width > 0 && height > 0) 
         munmap(pixels, width * height * 4);
-    }
-    if(buffer) {
+    if (buffer)
         wl_buffer_destroy(buffer);
-    }
-    if(x_top) xdg_toplevel_destroy(x_top);
-    if(x_surface) xdg_surface_destroy(x_surface);
-    if(callback) wl_callback_destroy(callback);
-    if(surface) wl_surface_destroy(surface);
+    if(x_toplevel) 
+        xdg_toplevel_destroy(x_toplevel);
+    if(x_surface) 
+        xdg_surface_destroy(x_surface);
+    if(callback) 
+        wl_callback_destroy(callback);
+    if(surface) 
+        wl_surface_destroy(surface);
 }
 
 } // namespace tobi_engine

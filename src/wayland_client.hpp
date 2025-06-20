@@ -1,6 +1,5 @@
 #pragma once
 
-#include <iostream>
 #include <memory>
 
 struct wl_display;
@@ -21,30 +20,31 @@ namespace tobi_engine
             
             ~WaylandClient();
 
-            struct wl_display* get_display() { return display; };
-            struct wl_registry* get_registry() { return registry; };
+            wl_display* get_display() { return display; };
+            wl_registry* get_registry() { return registry; };
 
-            struct wl_compositor* get_compositor() { return compositor; };
-            struct xdg_wm_base* get_shell() { return shell; };
-            struct wl_shm* get_shm() { return shm; };
+            wl_compositor* get_compositor() { return compositor; };
+            xdg_wm_base* get_shell() { return shell; };
+            wl_shm* get_shm() { return shm; };
             
-            void set_compositor(struct wl_compositor* compositor) { this->compositor = compositor; };
-            void set_shell(struct xdg_wm_base* shell) { this->shell = shell; };
-            void set_shm(struct wl_shm* shm) { this->shm = shm; };
+            void set_compositor(wl_compositor* compositor) { this->compositor = compositor; };
+            void set_shell(xdg_wm_base* shell) { this->shell = shell; };
+            void set_shm(wl_shm* shm) { this->shm = shm; };
 
             void update();
 
-            struct wl_compositor* compositor = nullptr;
-            struct xdg_wm_base* shell = nullptr;
-            struct wl_shm* shm = nullptr;
         private:
 
             WaylandClient();
 
             void initialize();
 
-            struct wl_display* display = nullptr;
-            struct wl_registry* registry = nullptr;
+            wl_display* display;
+            wl_registry* registry;
+
+            wl_compositor* compositor;
+            xdg_wm_base* shell;
+            wl_shm* shm;
     };
 
 }

@@ -1,25 +1,26 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 
-#include <wayland-client-core.h>
-#include <wayland-client-protocol.h>
-#include <wayland-client.h>
-
-#include "xdg-shell-client-protocol.h"
 #include "window.hpp"
 
-
-static uint8_t                 colour = 0;
-static bool                    is_closed = false; 
+struct wl_surface;
+struct wl_callback;
+struct xdg_surface;
+struct xdg_toplevel;
+struct wl_buffer;
 
 namespace tobi_engine
 {
 
+class WaylandClient;
+class SharedMemory;
+
 class MyWindow : public Window
 {
     public:
-        MyWindow(){ init(); }
+        MyWindow();
         virtual ~MyWindow() override { destroy(); }
         
         wl_surface* get_surface() { return surface; }
@@ -28,6 +29,7 @@ class MyWindow : public Window
         void resize(uint16_t w, uint16_t h);
         void resize();
         bool should_close() { return is_closed; }
+        void close_window() { is_closed = true; } 
 
         virtual void update() override;
 
@@ -36,18 +38,29 @@ class MyWindow : public Window
         void draw() ;
 
     private:
-        void init();
+        void initialize();
         void destroy();
 
-        wl_surface          *surface;
-        wl_callback         *callback;
-        xdg_surface         *x_surface;
-        xdg_toplevel        *x_top;
-        wl_buffer           *buffer;
+        void create_buffer();
+        void create_shared_memory();
+
+        std::shared_ptr<WaylandClient> client;
+        std::shared_ptr<SharedMemory> shared_memory;
+
+        wl_surface          *surface = nullptr;
+        wl_callback         *callback = nullptr;
+        xdg_surface         *x_surface = nullptr;
+        xdg_toplevel        *x_toplevel = nullptr;
+        wl_buffer           *buffer = nullptr;
 
         uint8_t             *pixels = nullptr;
         uint16_t            width = 200;
         uint16_t            height = 100;
+
+        uint8_t                 colour = 0;
+        bool                    is_closed = false; 
+
+        
 };
 
 }

@@ -3,6 +3,7 @@
 add_library(wayland_window STATIC
     wayland_window.cpp
     wayland_client.cpp
+    shared_memory.cpp
     window.cpp
 )
 
