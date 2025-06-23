@@ -34,18 +34,26 @@ namespace tobi_engine
     { 
         if(size == this->size) 
             return;
-        this->size = size;
+
+        munmap(memory, this->size);
         close(file_descriptor);
+        
+        this->size = size;
         
         allocate_shm();
         create_shared_memory();
     }
 
+    void SharedMemory::fill(uint8_t data)
+    {
+        std::fill(memory, memory + size, data);
+    }
+
     void SharedMemory::allocate_shm() 
     {
         // create random filename
-        auto name = std::string("/window-handle-");
-        name.append(generate_random_string(10));
+        auto name = std::string("/window-handle-")
+            .append(generate_random_string(10));
 
         Logger::debug("Created SHM: " + name);
 
@@ -56,10 +64,7 @@ namespace tobi_engine
         shm_unlink(name.c_str());
 
         if(ftruncate(file_descriptor, size) == -1)
-        {   
-            close(file_descriptor);
             throw std::runtime_error("Failed to truncate file " + name);
-        }
     }
 
     void SharedMemory::create_shared_memory()

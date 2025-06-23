@@ -8,9 +8,9 @@ int main() {
     // Initialize Wayland display
 
     auto window = tobi_engine::create_window();
-    uint8_t c = 200;
+    uint32_t c = 1000;
     
-    for(size_t a = 0; a < 100; a++)
+    for(size_t a = 0; a < c; a++)
         window->update();
 
 

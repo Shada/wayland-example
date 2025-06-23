@@ -1,5 +1,6 @@
 #include "wayland_client.hpp"
 
+#include <cstddef>
 #include <stdexcept>
 
 #include <wayland-client.h>
@@ -17,7 +18,7 @@ namespace tobi_engine
     }
     const struct xdg_wm_base_listener shell_listener = 
     {
-        .ping = shell_ping
+        shell_ping
     };
 
     void registry_global(void *data, wl_registry *registry, uint32_t name, const char *interface, uint32_t version) 
@@ -28,26 +29,53 @@ namespace tobi_engine
 
         if (interface_name.compare(wl_compositor_interface.name) == 0) 
         {
-            auto compositor = (wl_compositor*)wl_registry_bind(registry, name, &wl_compositor_interface, 4);
+            const uint32_t client_supported_version = 6;
+            const uint32_t bind_version = std::min(version, client_supported_version);
+            if (bind_version < client_supported_version) 
+            {
+                throw std::runtime_error("Server supports wl_compositor version " + std::to_string(version) +
+                            ", but client only supports up to " + std::to_string(client_supported_version));
+            }
+            auto compositor = (wl_compositor*)wl_registry_bind(registry, name, &wl_compositor_interface, bind_version);
             window->set_compositor(compositor);
             // Debug log for compositor registration
             Logger::debug("added compositor to registry");
         }
         else if (interface_name.compare(wl_shm_interface.name) == 0) 
         {
-            auto shm = (wl_shm*)wl_registry_bind(registry, name, &wl_shm_interface, 1);
+            const uint32_t client_supported_version = 2;
+            const uint32_t bind_version = std::min(version, client_supported_version);
+            if (bind_version < client_supported_version) 
+            {
+                throw std::runtime_error("Server supports wl_shm version " + std::to_string(version) +
+                            ", but client only supports up to " + std::to_string(client_supported_version));
+            }
+            auto shm = (wl_shm*)wl_registry_bind(registry, name, &wl_shm_interface, bind_version);
             window->set_shm(shm);
             Logger::debug("added shm to registry");
         }
         else if (interface_name.compare(xdg_wm_base_interface.name) == 0) 
         {
-            auto shell = (xdg_wm_base*)wl_registry_bind(registry, name, &xdg_wm_base_interface, 1);
-            xdg_wm_base_add_listener(shell, &shell_listener, 0);
+            const uint32_t client_supported_version = 5;
+            const uint32_t bind_version = std::min(version, client_supported_version);
+            if (bind_version < client_supported_version) 
+            {
+                throw std::runtime_error("Server supports xdg_wm_base version " + std::to_string(version) +
+                            ", but client only supports up to " + std::to_string(client_supported_version));
+            }
+            auto shell = (xdg_wm_base*)wl_registry_bind(registry, name, &xdg_wm_base_interface, bind_version);
+            xdg_wm_base_add_listener(shell, &shell_listener, window);
             window->set_shell(shell);
             Logger::debug("added shell to registry");
         }
-        //else if (!strcmp(interface, wl_seat_interface.name)) {
-        //    seat = wl_registry_bind(registry, name, &wl_seat_interface, 1);
+        //else if (!strcmp(interface, wl_seat_interface.name)) 
+        //{
+            //const uint32_t bind_version = 1;
+            //if (version < bind_version) 
+            //{
+            //    throw std::runtime_error("Wayland server does not support required wl_compositor version!");
+            //}
+        //    seat = wl_registry_bind(registry, name, &wl_seat_interface, bind_version);
         //    wl_seat_add_listener(seat, &seat_listener, 0);
     // }
     }
@@ -76,11 +104,31 @@ namespace tobi_engine
     {
         wl_display_flush(display);
         
-        if(shm) wl_shm_release(shm);
-        if(shell) xdg_wm_base_destroy(shell);
-        if(compositor) wl_compositor_destroy(compositor);
-        if(registry) wl_registry_destroy(registry);
-        if(display) wl_display_disconnect(display);
+        if(shm) 
+        {
+            wl_shm_release(shm);
+            shm = nullptr;
+        }
+        if(shell) 
+        {
+            xdg_wm_base_destroy(shell);
+            shell = nullptr;
+        }
+        if(compositor) 
+        {
+            wl_compositor_destroy(compositor);
+            compositor = nullptr;
+        }
+        if(registry) 
+        {
+            wl_registry_destroy(registry);
+            registry = nullptr;
+        }
+        if(display) 
+        {
+            wl_display_disconnect(display);
+            display = nullptr;
+        }
     }
 
     WaylandClient::WaylandClient()

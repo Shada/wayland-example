@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <sys/mman.h>
 
 namespace tobi_engine
 {
@@ -13,6 +14,9 @@ namespace tobi_engine
 
             int32_t get_fd() const;
             void resize(uint32_t size);
+            void fill(uint8_t data);
+
+            //const uint8_t* get_memory() { return memory; };
 
         private:
             

@@ -17,23 +17,23 @@ namespace tobi_engine
 class WaylandClient;
 class SharedMemory;
 
-class MyWindow : public Window
+class WaylandWindow : public Window
 {
     public:
-        MyWindow();
-        virtual ~MyWindow() override { destroy(); }
+        WaylandWindow();
+        virtual ~WaylandWindow() override { destroy(); }
         
         wl_surface* get_surface() { return surface; }
-        void set_callback(wl_callback *cb) { callback = cb; }
+        void set_callback(wl_callback *callback) { this->callback = callback; }
 
-        void resize(uint16_t w, uint16_t h);
+        void resize(uint16_t width, uint16_t heigth);
         void resize();
         bool should_close() { return is_closed; }
         void close_window() { is_closed = true; } 
 
         virtual void update() override;
 
-        bool is_configured(){ return (pixels != nullptr); }
+        bool is_configured(){ return configured; }
 
         void draw() ;
 
@@ -42,7 +42,10 @@ class MyWindow : public Window
         void destroy();
 
         void create_buffer();
-        void create_shared_memory();
+
+        uint16_t            width;
+        uint16_t            height;
+        const uint32_t      PIXEL_SIZE = 4;
 
         std::shared_ptr<WaylandClient> client;
         std::shared_ptr<SharedMemory> shared_memory;
@@ -53,12 +56,9 @@ class MyWindow : public Window
         xdg_toplevel        *x_toplevel = nullptr;
         wl_buffer           *buffer = nullptr;
 
-        uint8_t             *pixels = nullptr;
-        uint16_t            width = 200;
-        uint16_t            height = 100;
-
-        uint8_t                 colour = 0;
-        bool                    is_closed = false; 
+        uint8_t             background_colour = 0;
+        bool                is_closed = false;
+        bool                configured = false;
 
         
 };

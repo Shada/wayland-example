@@ -6,6 +6,6 @@ namespace tobi_engine
 {
     std::shared_ptr<Window> create_window()
     {
-        return std::make_shared<MyWindow>();
+        return std::make_shared<WaylandWindow>();
     }   
 }
