@@ -2,6 +2,7 @@
 # Create wayland_window library
 add_library(wayland_window STATIC
     wayland_window.cpp
+    window_registry.cpp
     wayland_client.cpp
     shared_memory.cpp
     window.cpp

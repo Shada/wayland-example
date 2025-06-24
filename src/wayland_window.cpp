@@ -1,6 +1,7 @@
 #include "wayland_window.hpp"
 
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <unistd.h>
 #include <fcntl.h>
@@ -18,7 +19,6 @@
 
 namespace tobi_engine
 {
-
 
 namespace 
 {
@@ -112,7 +112,6 @@ void frame_new(void* data, struct wl_callback* callback, uint32_t callback_data)
     
 }
 
-
 WaylandWindow::WaylandWindow()
     :   client(WaylandClient::get_instance()),
         width(200),
@@ -142,6 +141,14 @@ void WaylandWindow::initialize()
 void WaylandWindow::update()
 {
     client->update();
+}
+
+void WaylandWindow::on_keypress(uint32_t key)
+{
+    if(key == 1)
+        is_closed = true;
+
+    printf("on_keypress() == %d\n", key);
 }
 
 void WaylandWindow::resize(uint16_t width, uint16_t height)

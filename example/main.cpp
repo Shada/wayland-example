@@ -2,19 +2,17 @@
 #include <cstdint>
 #include <memory>
 
-#include "window.hpp"
+#include "window_registry.hpp"
 
 int main() {
     // Initialize Wayland display
 
-    auto window = tobi_engine::create_window();
-    uint32_t c = 1000;
+    auto registry = tobi_engine::WindowRegistry::get_instance();
+    auto window = registry->create_window();
+    uint32_t c = 200;
     
-    for(size_t a = 0; a < c; a++)
+    while(!window->should_close())
         window->update();
-
-
-    
 
     return 0;
 }

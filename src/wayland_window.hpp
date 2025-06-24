@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <wayland-client-protocol.h>
 
 #include "window.hpp"
 
@@ -28,10 +29,11 @@ class WaylandWindow : public Window
 
         void resize(uint16_t width, uint16_t heigth);
         void resize();
-        bool should_close() { return is_closed; }
+        virtual bool should_close() override { return is_closed; }
         void close_window() { is_closed = true; } 
 
         virtual void update() override;
+        virtual void on_keypress(uint32_t key) override;
 
         bool is_configured(){ return configured; }
 

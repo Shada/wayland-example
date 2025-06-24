@@ -16,8 +16,6 @@ namespace tobi_engine
             void resize(uint32_t size);
             void fill(uint8_t data);
 
-            //const uint8_t* get_memory() { return memory; };
-
         private:
             
             void allocate_shm();
