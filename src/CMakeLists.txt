@@ -5,7 +5,9 @@ add_library(wayland_window STATIC
     window_registry.cpp
     wayland_client.cpp
     shared_memory.cpp
+    wayland_deleters.cpp
     window.cpp
+    utils/logger.cpp
 )
 
 # Set the include directories for the wayland_window library
@@ -23,37 +25,31 @@ target_include_directories(wayland_window
 
 # Find and link the Wayland client library
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(WAYLAND_CLIENT REQUIRED IMPORTED_TARGET wayland-client)
-target_link_libraries(wayland_window PkgConfig::WAYLAND_CLIENT)
+pkg_check_modules(wayland-client REQUIRED wayland-client)
+pkg_check_modules(wayland-cursor REQUIRED wayland-cursor)
+target_link_libraries(wayland_window ${wayland-client_LIBRARIES})
+target_link_libraries(wayland_window ${wayland-cursor_LIBRARIES})
 
+find_package(ECM REQUIRED)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${ECM_FIND_MODULE_DIR})
 # Use Wayland scanner to generate protocol files (header and source) from the Wayland XML specification
 find_program(WAYLAND_SCANNER NAMES wayland-scanner)
 
-# Allow configuration of the Wayland protocols path
-set(WAYLAND_PROTOCOLS_PATH "/usr/share/wayland-protocols/stable" CACHE PATH "Path to Wayland protocols")
-if(WAYLAND_SCANNER)
-    set(GENERATED_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated)
-    file(MAKE_DIRECTORY ${GENERATED_DIR})
-    add_custom_command(
-        OUTPUT ${GENERATED_DIR}/xdg-shell-protocol.c ${GENERATED_DIR}/xdg-shell-client-protocol.h
-        COMMAND ${WAYLAND_SCANNER} private-code ${WAYLAND_PROTOCOLS_PATH}/xdg-shell/xdg-shell.xml ${GENERATED_DIR}/xdg-shell-protocol.c
-        COMMAND ${WAYLAND_SCANNER} client-header ${WAYLAND_PROTOCOLS_PATH}/xdg-shell/xdg-shell.xml ${GENERATED_DIR}/xdg-shell-client-protocol.h
-        DEPENDS ${WAYLAND_PROTOCOLS_PATH}/xdg-shell/xdg-shell.xml
-        COMMENT "Generating xdg-shell protocol files for Wayland communication"
-    )
-    add_custom_target(generate_xdg_shell_protocol DEPENDS ${GENERATED_DIR}/xdg-shell-protocol.c ${GENERATED_DIR}/xdg-shell-client-protocol.h)
-    add_dependencies(wayland_window generate_xdg_shell_protocol)
+execute_process(COMMAND pkg-config wayland-protocols --variable=pkgdatadir
+    OUTPUT_VARIABLE WAYLAND_PROTOCOLS_DIR
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-    target_include_directories(wayland_window
-        PRIVATE
-            ${CMAKE_CURRENT_BINARY_DIR}/
-    )
-    target_sources(wayland_window
-        PRIVATE
-            ${GENERATED_DIR}/xdg-shell-protocol.c
-    )
+find_package(WaylandScanner REQUIRED)
+ecm_add_wayland_client_protocol(WL_PROT_SRC
+    PROTOCOL ${WAYLAND_PROTOCOLS_DIR}/stable/xdg-shell/xdg-shell.xml
+    BASENAME xdg-shell)
+ecm_add_wayland_client_protocol(WL_DEC_PROT_SRC
+    PROTOCOL ${WAYLAND_PROTOCOLS_DIR}/unstable/xdg-decoration/xdg-decoration-unstable-v1.xml
+    BASENAME xdg-decoration-unstable-v1)
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-else()
-    message(FATAL_ERROR "wayland-scanner not found. Please install the Wayland development package (e.g., 'libwayland-dev' on Debian-based systems).")
-endif()
-
+target_sources(wayland_window
+    PRIVATE
+        ${WL_PROT_SRC}
+        ${WL_DEC_PROT_SRC}
+)

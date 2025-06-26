@@ -1,49 +1,43 @@
 #pragma once
-#include <iostream>
+
+#include <mutex>
+#include <source_location>
+#include <string>
+
 
 namespace tobi_engine
 {
     
-enum class LogLevel 
+enum LogLevel 
 {
-    Debug,
+    Debug = 0,
     Info,
-    Warning
+    Warning,
+    Error
 };
 
-class Logger 
+class Logger final
 {
 public:
-    static void log(LogLevel level, const std::string& message) 
-    {
-        switch (level) 
-        {
-            case LogLevel::Debug:
-                std::cout << "[DEBUG] " << message << std::endl;
-                break;
-            case LogLevel::Info:
-                std::cout << "[INFO] " << message << std::endl;
-                break;
-            case LogLevel::Warning:
-                std::cout << "[WARNING] " << message << std::endl;
-                break;
-        }
-    }
+    static void log(LogLevel level, const std::string& message);
 
-    static void debug(const std::string& message) 
-    {
-        log(LogLevel::Debug, message);
-    }
+    static void debug(const std::string& message,
+         const std::source_location location =
+               std::source_location::current());
 
-    static void info(const std::string& message) 
-    {
-        log(LogLevel::Info, message);
-    }
+    static void info(const std::string& message);
 
-    static void warning(const std::string& message) 
-    {
-        log(LogLevel::Warning, message);
-    }
+    static void warning(const std::string& message,
+         const std::source_location location =
+               std::source_location::current());
+
+    static void error(const std::string& message,
+         const std::source_location location =
+               std::source_location::current());
+
+    static std::mutex log_mutex;
+    static LogLevel loglevel;
 };
+
 
 }

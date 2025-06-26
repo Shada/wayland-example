@@ -20,9 +20,9 @@ namespace tobi_engine
     WindowRegistry::~WindowRegistry()
     {}
 
-    std::shared_ptr<Window> WindowRegistry::create_window()
+    std::shared_ptr<Window> WindowRegistry::create_window(WindowProperties properties)
     {
-        auto window = std::make_shared<WaylandWindow>();
+        auto window = std::make_shared<WaylandWindow>(properties);
         windows[window->get_surface()] = window;
         
         return window;

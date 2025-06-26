@@ -1,10 +1,18 @@
 #pragma once
 
+#include <cstdint>
 #include <memory>
+#include <string>
 
 namespace tobi_engine
 {
-    
+    struct WindowProperties
+    {
+        uint32_t width;
+        uint32_t height;
+        std::string name;
+    };
+
     class Window
     {
     public:
@@ -22,6 +30,6 @@ namespace tobi_engine
     private:
         
     };
-    std::shared_ptr<Window> create_window();
+    std::shared_ptr<Window> create_window(WindowProperties properties);
     
 }

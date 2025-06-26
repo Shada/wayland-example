@@ -3,57 +3,53 @@
 #include <memory>
 #include <unordered_map>
 
-struct wl_display;
-struct wl_registry;
-struct wl_compositor;
-struct xdg_wm_base;
-struct wl_shm;
-struct wl_seat;
-struct wl_keyboard;
-struct wl_surface;
+#include "wayland_deleters.hpp"
+
+struct zxdg_decoration_manager_v1;
 
 namespace tobi_engine
 {
-    class WaylandWindow;
+class WaylandWindow;
 
-    class WaylandClient
-    {
-        public:
-            static std::shared_ptr<WaylandClient> get_instance();
-            
-            ~WaylandClient();
+class WaylandClient
+{
+    public:
+        static std::shared_ptr<WaylandClient> get_instance();
+        
+        ~WaylandClient();
 
-            wl_display* get_display() { return display; };
-            wl_registry* get_registry() { return registry; };
-            wl_compositor* get_compositor() { return compositor; };
-            xdg_wm_base* get_shell() { return shell; };
-            wl_shm* get_shm() { return shm; };
-            wl_keyboard* get_keyboard() { return keyboard; };
-            
-            void set_compositor(wl_compositor* compositor) { this->compositor = compositor; };
-            void set_shell(xdg_wm_base* shell) { this->shell = shell; };
-            void set_shm(wl_shm* shm) { this->shm = shm; };
-            void set_seat(wl_seat* seat) { this->seat = seat; };
-            void set_keyboard(wl_keyboard* keyboard) { this->keyboard = keyboard; };
+        wl_compositor* get_compositor() const { return compositor.get(); }
+        xdg_wm_base* get_shell() const { return shell.get(); }
+        wl_shm* get_shm() const { return shm.get(); }
+        wl_keyboard* get_keyboard() const { return keyboard.get(); }
+        
+        void set_compositor(wl_compositor* compositor) { this->compositor = CompositorPtr(compositor); }
+        void set_subcompositor(wl_subcompositor* subcompositor) { this->subcompositor = SubCompositorPtr(subcompositor); }
+        void set_shell(xdg_wm_base* shell);
+        void set_shm(wl_shm* shm) { this->shm = ShmPtr(shm); }
+        void set_seat(wl_seat* seat);
+        void set_keyboard(wl_keyboard* keyboard) { this->keyboard = KeyboardPtr(keyboard); }
 
-            void update();
+        void update();
 
-        private:
+    private:
 
-            static std::shared_ptr<WaylandClient> instance;
+        static std::shared_ptr<WaylandClient> instance;
 
-            WaylandClient();
+        WaylandClient();
 
-            void initialize();
+        void initialize();
 
-            wl_display* display;
-            wl_registry* registry;
+        DisplayPtr display;
+        RegistryPtr registry;
 
-            wl_compositor* compositor;
-            xdg_wm_base* shell;
-            wl_shm* shm;
-            wl_seat* seat;
-            wl_keyboard* keyboard;
-    };
+        CompositorPtr compositor;
+
+        SubCompositorPtr subcompositor;
+        XdgShellPtr shell;
+        ShmPtr shm;
+        SeatPtr seat;
+        KeyboardPtr keyboard;
+};
 
 }

@@ -17,7 +17,7 @@ public:
     WindowRegistry(const WindowRegistry&) = delete;
     WindowRegistry& operator=(const WindowRegistry&) = delete;
 
-    std::shared_ptr<Window> create_window();
+    std::shared_ptr<Window> create_window(WindowProperties properties);
     void set_active_window(void* key) { active_window = windows[key]; }
     void on_keypress(uint32_t key);
 

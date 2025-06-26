@@ -2,15 +2,10 @@
 
 #include <cstdint>
 #include <memory>
-#include <wayland-client-protocol.h>
 
 #include "window.hpp"
 
-struct wl_surface;
-struct wl_callback;
-struct xdg_surface;
-struct xdg_toplevel;
-struct wl_buffer;
+#include "wayland_deleters.hpp"
 
 namespace tobi_engine
 {
@@ -21,17 +16,18 @@ class SharedMemory;
 class WaylandWindow : public Window
 {
     public:
-        WaylandWindow();
-        virtual ~WaylandWindow() override { destroy(); }
+        WaylandWindow(WindowProperties properties);
+        virtual ~WaylandWindow() override = default;
         
-        wl_surface* get_surface() { return surface; }
-        void set_callback(wl_callback *callback) { this->callback = callback; }
+        wl_surface* get_surface() { return surface.get(); }
+        void set_callback(wl_callback *callback) { this->callback.reset(callback); }
 
         void resize(uint16_t width, uint16_t heigth);
         void resize();
-        virtual bool should_close() override { return is_closed; }
+        
         void close_window() { is_closed = true; } 
 
+        virtual bool should_close() override { return is_closed; }
         virtual void update() override;
         virtual void on_keypress(uint32_t key) override;
 
@@ -41,7 +37,6 @@ class WaylandWindow : public Window
 
     private:
         void initialize();
-        void destroy();
 
         void create_buffer();
 
@@ -52,11 +47,11 @@ class WaylandWindow : public Window
         std::shared_ptr<WaylandClient> client;
         std::shared_ptr<SharedMemory> shared_memory;
 
-        wl_surface          *surface = nullptr;
-        wl_callback         *callback = nullptr;
-        xdg_surface         *x_surface = nullptr;
-        xdg_toplevel        *x_toplevel = nullptr;
-        wl_buffer           *buffer = nullptr;
+        SurfacePtr          surface = nullptr;
+        CallbackPtr         callback = nullptr;
+        XdgSurfacePtr       x_surface = nullptr;
+        XdgToplevelPtr      x_toplevel = nullptr;
+        BufferPtr           buffer = nullptr;
 
         uint8_t             background_colour = 0;
         bool                is_closed = false;
