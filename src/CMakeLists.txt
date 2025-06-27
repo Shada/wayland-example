@@ -4,10 +4,11 @@ add_library(wayland_window STATIC
     wayland_window.cpp
     window_registry.cpp
     wayland_client.cpp
-    shared_memory.cpp
+    wayland_surface_buffer.cpp
     wayland_deleters.cpp
     window.cpp
     utils/logger.cpp
+    utils/utils.cpp
 )
 
 # Set the include directories for the wayland_window library

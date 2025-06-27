@@ -1,7 +1,9 @@
-#include "../include/window_registry.hpp"
-#include "wayland_window.hpp"
+#include "window_registry.hpp"
+
 #include <cstddef>
 #include <memory>
+
+#include "wayland_window.hpp"
 
 namespace tobi_engine
 {
@@ -18,17 +20,15 @@ namespace tobi_engine
     std::shared_ptr<Window> WindowRegistry::create_window(WindowProperties properties)
     {
         auto window = std::make_shared<WaylandWindow>(properties);
-        windows[window->get_surface()] = window;
+        windows[window->get_uid()] = window;
         
         return window;
     }
 
     void WindowRegistry::on_keypress(uint32_t key)
     {
-        if(active_window)
-        { 
-            active_window->on_keypress(key); 
-        }
+        if(keyboard_active_window)
+            keyboard_active_window->on_keypress(key); 
     }
 
 }

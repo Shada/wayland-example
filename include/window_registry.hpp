@@ -1,8 +1,9 @@
 #pragma once
 
-#include "window.hpp"
 #include <memory>
 #include <unordered_map>
+
+#include "window.hpp"
 
 namespace tobi_engine 
 {
@@ -18,7 +19,12 @@ public:
     WindowRegistry& operator=(const WindowRegistry&) = delete;
 
     std::shared_ptr<Window> create_window(WindowProperties properties);
-    void set_active_window(void* key) { active_window = windows[key]; }
+    void set_active_window(uint64_t uid) 
+    {
+        if(windows.contains(uid)) 
+            keyboard_active_window = windows[uid]; 
+    }
+    void unset_active_window() { keyboard_active_window = nullptr; }
     void on_keypress(uint32_t key);
 
 private:
@@ -27,8 +33,8 @@ private:
 
     WindowRegistry() = default;
     
-    std::unordered_map<void*, std::shared_ptr<Window>> windows;
-    std::shared_ptr<Window> active_window = nullptr;
+    std::unordered_map<uint64_t, std::shared_ptr<Window>> windows;
+    std::shared_ptr<Window> keyboard_active_window = nullptr;
 
 };
 

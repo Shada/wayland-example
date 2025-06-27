@@ -12,6 +12,7 @@ struct wl_registry;
 struct wl_display;
 
 struct wl_surface;
+struct wl_subsurface;
 struct wl_callback;
 struct xdg_surface;
 struct xdg_toplevel;
@@ -30,6 +31,7 @@ namespace tobi_engine
     struct WlDisplayDeleter { void operator()(wl_display* ptr) const; };
 
     struct WlSurfaceDeleter { void operator()(wl_surface* ptr) const; };
+    struct WlSubSurfaceDeleter { void operator()(wl_subsurface* ptr) const; };
     struct WlCallbackDeleter { void operator()(wl_callback* ptr) const; };
     struct WlBufferDeleter { void operator()(wl_buffer* ptr) const; };
     struct XdgSurfaceDeleter { void operator()(xdg_surface* ptr) const; };
@@ -45,6 +47,7 @@ namespace tobi_engine
     using DisplayPtr = std::unique_ptr<wl_display, WlDisplayDeleter>;
 
     using SurfacePtr = std::unique_ptr<wl_surface, WlSurfaceDeleter>;
+    using SubSurfacePtr = std::unique_ptr<wl_subsurface, WlSubSurfaceDeleter>;
     using CallbackPtr = std::unique_ptr<wl_callback, WlCallbackDeleter>;
     using BufferPtr = std::unique_ptr<wl_buffer, WlBufferDeleter>;
     using XdgSurfacePtr = std::unique_ptr<xdg_surface, XdgSurfaceDeleter>;

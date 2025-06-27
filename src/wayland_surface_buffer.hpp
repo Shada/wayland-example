@@ -1,25 +1,24 @@
 #pragma once
 
 #include <cstdint>
-#include <sys/mman.h>
 
 #include "wayland_deleters.hpp"
 
 namespace tobi_engine
 {
 
-    class SharedMemory
+    class SurfaceBuffer
     {
         public:
-            SharedMemory(uint16_t width, uint16_t height);
-            ~SharedMemory();
+            SurfaceBuffer(uint32_t width, uint32_t height);
+            ~SurfaceBuffer();
 
             int32_t get_fd() const;
             wl_buffer* get_buffer() const { return buffer.get(); }
-            uint16_t get_width() const { return width; }
-            uint16_t get_height() const { return height; }
+            uint32_t get_width() const { return width; }
+            uint32_t get_height() const { return height; }
 
-            void resize(uint16_t width, uint16_t height);
+            void resize(uint32_t width, uint32_t height);
             void fill(uint8_t data);
             void fill(uint32_t data);
 
@@ -31,8 +30,8 @@ namespace tobi_engine
             void create_buffer();
 
             int32_t file_descriptor;
-            uint16_t width;
-            uint16_t height;
+            uint32_t width;
+            uint32_t height;
             uint32_t size;
             uint32_t* memory;
             BufferPtr buffer;

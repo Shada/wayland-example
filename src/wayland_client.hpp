@@ -1,7 +1,6 @@
 #pragma once
 
 #include <memory>
-#include <unordered_map>
 
 #include "wayland_deleters.hpp"
 
@@ -31,7 +30,9 @@ class WaylandClient
         void set_seat(wl_seat* seat);
         void set_keyboard(wl_keyboard* keyboard) { this->keyboard = KeyboardPtr(keyboard); }
 
+        void flush();
         void update();
+        void clear();
 
     private:
 

@@ -1,14 +1,13 @@
 #pragma once
 
-#include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <string>
-#include <wayland-client-protocol.h>
-
-#include "window.hpp"
 
 #include "wayland_deleters.hpp"
+#include "wayland_surface_buffer.hpp"
+#include "window.hpp"
 
 struct wl_subsurface;
 
@@ -16,18 +15,24 @@ namespace tobi_engine
 {
 
 class WaylandClient;
-class SharedMemory;
 
 class WaylandWindow : public Window
 {
     public:
-        WaylandWindow(WindowProperties properties);
-        virtual ~WaylandWindow() override = default;
+        WaylandWindow(const WindowProperties &properties);
+        virtual ~WaylandWindow() override {};
         
-        wl_surface* get_surface() { return surface.get(); }
+        wl_surface* get_surface() 
+        {
+            if(is_decorated && window_surface) 
+                return window_surface.get();
+            if(content_surface)
+                return content_surface.get();
+            return nullptr;
+        }
         void set_callback(wl_callback *callback) { this->callback.reset(callback); }
 
-        void resize(uint16_t width, uint16_t heigth);
+        void resize(uint32_t width, uint32_t heigth);
 
         void close_window() { is_closed = true; } 
 
@@ -35,27 +40,39 @@ class WaylandWindow : public Window
         virtual void update() override;
         virtual void on_keypress(uint32_t key) override;
 
-        bool is_configured(){ return shared_memory != nullptr; }
+        bool is_configured(){ return window_surface_buffer != nullptr; }
 
         void draw() ;
 
     private:
-        void initialize();
+        virtual void initialize() override;
+        void toggle_decorations(bool enable);
 
         void create_buffer();
 
         std::shared_ptr<WaylandClient> client;
-        std::shared_ptr<SharedMemory> shared_memory;
+        std::unique_ptr<SurfaceBuffer> window_surface_buffer;
+        std::unique_ptr<SurfaceBuffer> content_surface_buffer;
 
-        SurfacePtr          surface = nullptr;
+        std::vector<std::function<void()>> pending_actions;
+
+        SurfacePtr          window_surface = nullptr;
         CallbackPtr         callback = nullptr;
         XdgSurfacePtr       x_surface = nullptr;
         XdgToplevelPtr      x_toplevel = nullptr;
 
+        SurfacePtr          content_surface = nullptr;
+        SubSurfacePtr       content_subsurface = nullptr;
+
         std::string         title;
-        uint8_t             background_colour = 0;
+        uint32_t            background_colour = 0xFF00DDDD;
         bool                is_closed = false;
-        
+
+        static constexpr uint32_t  DECORATIONS_BORDER_SIZE = 4;
+        static constexpr uint32_t  DECORATIONS_TOPBAR_SIZE = 32;
+        static constexpr uint32_t  DECORATIONS_BUTTON_SIZE = 28;
+
+        bool is_decorated = true;
 };
 
 }

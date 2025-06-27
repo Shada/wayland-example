@@ -42,6 +42,10 @@ namespace tobi_engine
     {
         if (ptr) wl_surface_destroy(ptr);
     }
+    void WlSubSurfaceDeleter::operator()(wl_subsurface* ptr) const 
+    {
+        if (ptr) wl_subsurface_destroy(ptr);
+    }
     void WlCallbackDeleter::operator()(wl_callback* ptr) const 
     {
         if (ptr) wl_callback_destroy(ptr);

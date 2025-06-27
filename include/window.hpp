@@ -13,10 +13,11 @@ namespace tobi_engine
         std::string title;
     };
 
+
     class Window
     {
     public:
-        Window() = default;
+        explicit Window(const WindowProperties &properties);
         Window(Window &&) = default;
         Window(const Window &) = default;
         Window &operator=(Window &&) = default;
@@ -26,10 +27,16 @@ namespace tobi_engine
         virtual void update() = 0;
         virtual bool should_close() = 0;
         virtual void on_keypress(uint32_t key) = 0;
+
+        uint64_t get_uid() { return uid; }
     
-    private:
+    protected:
+        WindowProperties properties;
+        uint64_t uid;
+
+        virtual void initialize() = 0;
         
     };
-    std::shared_ptr<Window> create_window(WindowProperties properties);
+    std::shared_ptr<Window> create_window(const WindowProperties &properties);
     
 }

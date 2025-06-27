@@ -1,4 +1,4 @@
-#include "shared_memory.hpp"
+#include "wayland_surface_buffer.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -17,7 +17,7 @@
 namespace tobi_engine
 {
 
-    SharedMemory::SharedMemory(uint16_t width, uint16_t height) 
+    SurfaceBuffer::SurfaceBuffer(uint32_t width, uint32_t height) 
         :   file_descriptor(-1),
             width(width),
             height(height),
@@ -27,25 +27,25 @@ namespace tobi_engine
         initialize();
     }
 
-    SharedMemory::~SharedMemory() 
+    SurfaceBuffer::~SurfaceBuffer() 
     { 
         munmap(memory, size);
         close(file_descriptor);
     }
 
-    void SharedMemory::initialize()
+    void SurfaceBuffer::initialize()
     {
         allocate_shm();
         create_shared_memory();
         create_buffer();
     }
 
-    int32_t SharedMemory::get_fd() const
+    int32_t SurfaceBuffer::get_fd() const
     { 
         return file_descriptor; 
     }
 
-    void SharedMemory::resize(uint16_t width, uint16_t height) 
+    void SurfaceBuffer::resize(uint32_t width, uint32_t height) 
     { 
         if(width == this->width && height == this->height) 
             return;
@@ -62,16 +62,16 @@ namespace tobi_engine
         create_buffer();
     }
 
-    void SharedMemory::fill(uint8_t data)
+    void SurfaceBuffer::fill(uint8_t data)
     {
         std::fill((uint8_t*)memory, (uint8_t*)memory + this->size, data);
     }
-    void SharedMemory::fill(uint32_t data)
+    void SurfaceBuffer::fill(uint32_t data)
     {
         std::fill(memory, memory + height * width, data);
     }
 
-    void SharedMemory::allocate_shm() 
+    void SurfaceBuffer::allocate_shm() 
     {
         // create random filename
         auto name = std::string("/window-handle-")
@@ -89,7 +89,7 @@ namespace tobi_engine
             throw std::runtime_error("Failed to truncate file " + name);
     }
 
-    void SharedMemory::create_shared_memory()
+    void SurfaceBuffer::create_shared_memory()
     {
         memory = static_cast<uint32_t*>(mmap(nullptr, size,
                                                     PROT_READ | PROT_WRITE,
@@ -100,7 +100,7 @@ namespace tobi_engine
         }
     }
 
-    void SharedMemory::create_buffer()
+    void SurfaceBuffer::create_buffer()
     {
         auto client = WaylandClient::get_instance();
         wl_shm_pool* pool = wl_shm_create_pool(client->get_shm(), file_descriptor, size);

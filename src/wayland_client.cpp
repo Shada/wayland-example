@@ -163,9 +163,20 @@ namespace tobi_engine
         initialize();
     }
 
+    void WaylandClient::flush()
+    {
+        wl_display_flush(display.get());
+        wl_display_roundtrip(display.get());
+    }
+
     void WaylandClient::update()
     {
         wl_display_dispatch(display.get());
+    }
+    void WaylandClient::clear()
+    {
+        wl_display_dispatch_pending(display.get());
+        wl_display_roundtrip(display.get());
     }
 
     void WaylandClient::initialize()
