@@ -19,6 +19,7 @@ class WaylandClient
         ~WaylandClient();
 
         wl_compositor* get_compositor() const { return compositor.get(); }
+        wl_subcompositor* get_subcompositor() const { return subcompositor.get(); }
         xdg_wm_base* get_shell() const { return shell.get(); }
         wl_shm* get_shm() const { return shm.get(); }
         wl_keyboard* get_keyboard() const { return keyboard.get(); }

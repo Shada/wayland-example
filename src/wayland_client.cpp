@@ -95,9 +95,8 @@ namespace tobi_engine
         }
         else if(bind_version < server_version)
         {
-            std::string message = "Server supports " + std::string(interface->name) + " version " + std::to_string(server_version)
-                + ", but client only supports up to " + std::to_string(server_version);
-            Logger::debug(message);
+            Logger::debug( "Server supports " + std::string(interface->name) + " version " + std::to_string(server_version)
+                + ", but client only supports up to " + std::to_string(server_version));
         }
 
         return wl_registry_bind(registry, name, interface, bind_version);
@@ -119,9 +118,9 @@ namespace tobi_engine
     {
         auto client = static_cast<WaylandClient*>(data);
         auto it = registry_handlers.find(interface);
-        if (it != registry_handlers.end()) {
+
+        if (it != registry_handlers.end()) 
             it->second(registry, name, version, client);
-        }
     }
 
     void registry_global_remove(void *data, wl_registry *registry, uint32_t name) 

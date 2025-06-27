@@ -15,11 +15,6 @@ namespace tobi_engine
         return instance;
     }
 
-    WindowRegistry::WindowRegistry()
-    {}
-    WindowRegistry::~WindowRegistry()
-    {}
-
     std::shared_ptr<Window> WindowRegistry::create_window(WindowProperties properties)
     {
         auto window = std::make_shared<WaylandWindow>(properties);

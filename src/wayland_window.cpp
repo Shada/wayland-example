@@ -33,9 +33,8 @@ static void xdg_surface_configure(void *data, struct xdg_surface *xdg_surface, u
 
     xdg_surface_ack_configure(xdg_surface, serial);
 
-    if(!window->is_configured()) {
-        window->resize();
-    }
+    if(!window->is_configured()) 
+        return;
     window->draw();
 }
 
@@ -117,9 +116,8 @@ void frame_new(void* data, struct wl_callback* callback, uint32_t callback_data)
 
 WaylandWindow::WaylandWindow(WindowProperties properties)
     :   client(WaylandClient::get_instance()),
-        width(properties.width),
-        height(properties.height),
-        shared_memory(std::make_shared<SharedMemory>(width * height * PIXEL_SIZE))
+        shared_memory(std::make_shared<SharedMemory>(properties.width, properties.height)),
+        title(properties.title)
 {
     initialize();
 }
@@ -135,8 +133,8 @@ void WaylandWindow::initialize()
     xdg_surface_add_listener(x_surface.get(), &xdg_surface_listener, this);
 
     x_toplevel.reset(xdg_surface_get_toplevel(x_surface.get()));
-    xdg_toplevel_set_title(x_toplevel.get(), "My test window");
-    xdg_toplevel_set_app_id(x_toplevel.get(), "My test window");
+    xdg_toplevel_set_title(x_toplevel.get(), title.c_str());
+    xdg_toplevel_set_app_id(x_toplevel.get(), title.c_str());
     xdg_toplevel_add_listener(x_toplevel.get(), &toplevel_listener, this);
     
     draw();
@@ -157,45 +155,16 @@ void WaylandWindow::on_keypress(uint32_t key)
 
 void WaylandWindow::resize(uint16_t width, uint16_t height)
 {
-    if (this->width == width && this->height == height) 
-        return;
-
-    this->width = width;
-    this->height = height;
-
-    resize();
-}
-void WaylandWindow::resize()
-{
-    Logger::debug("resize()");
-
-    configured = true;
-
-    shared_memory->resize(width * height * PIXEL_SIZE);
-
-    create_buffer();
-}
-
-void WaylandWindow::create_buffer()
-{
-    wl_shm_pool* pool = wl_shm_create_pool(client->get_shm(), shared_memory->get_fd(), width * height * PIXEL_SIZE);
-    if (!pool)
-        throw std::runtime_error("Failed to create Wayland SHM pool.");
-
-    buffer.reset(wl_shm_pool_create_buffer(pool, 0, width, height, width * PIXEL_SIZE, WL_SHM_FORMAT_ARGB8888));
-    wl_shm_pool_destroy(pool);
-    if (!buffer)
-        throw std::runtime_error("Failed to create Wayland buffer.");
+    shared_memory->resize(width, height);
 }
 
 void WaylandWindow::draw()
 {   
-    background_colour++;
+//    shared_memory->fill(uint8_t(background_colour++));
+    shared_memory->fill(uint32_t(0xFF00FF00));
     
-    shared_memory->fill(background_colour);
-    
-    wl_surface_attach(surface.get(), buffer.get(), 0, 0);
-    wl_surface_damage(surface.get(), 0, 0, width, height);
+    wl_surface_attach(surface.get(), shared_memory->get_buffer(), 0, 0);
+    wl_surface_damage(surface.get(), 0, 0, shared_memory->get_width(), shared_memory->get_height());
     wl_surface_commit(surface.get());
 }
 

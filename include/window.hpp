@@ -10,7 +10,7 @@ namespace tobi_engine
     {
         uint32_t width;
         uint32_t height;
-        std::string name;
+        std::string title;
     };
 
     class Window

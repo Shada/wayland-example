@@ -12,7 +12,7 @@ class WindowRegistry
 public:
     static std::shared_ptr<WindowRegistry> get_instance();
 
-    virtual ~WindowRegistry();
+    virtual ~WindowRegistry() = default;
 
     WindowRegistry(const WindowRegistry&) = delete;
     WindowRegistry& operator=(const WindowRegistry&) = delete;
@@ -25,7 +25,7 @@ private:
 
     static std::shared_ptr<WindowRegistry> instance;
 
-    WindowRegistry();
+    WindowRegistry() = default;
     
     std::unordered_map<void*, std::shared_ptr<Window>> windows;
     std::shared_ptr<Window> active_window = nullptr;
