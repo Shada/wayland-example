@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <string>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/mman.h>
@@ -225,13 +226,22 @@ void WaylandWindow::on_keypress(uint32_t key)
         pending_actions.push_back([this]() { update_decoration_mode(true); } );
     if(key == 33 && is_decorated)
         pending_actions.push_back([this]() { update_decoration_mode(false); } );
+    if(key == 30)
+        xdg_toplevel_set_fullscreen(x_toplevel.get(), nullptr);
+    if(key == 31)
+        xdg_toplevel_unset_fullscreen(x_toplevel.get());
 }
 
 void WaylandWindow::resize(uint32_t width, uint32_t height)
 {
+    Logger::debug("resize(" + std::to_string(width) + ", " + std::to_string(height) + ")");
     content_surface_buffer->resize(width, height);
+    wl_surface_attach(content_surface.get(), content_surface_buffer->get_buffer(), 0, 0);
     if(is_decorated)
+    {
         window_surface_buffer->resize(width + DECORATIONS_BORDER_SIZE * 2, height + DECORATIONS_BORDER_SIZE + DECORATIONS_TOPBAR_SIZE);
+        wl_surface_attach(window_surface.get(), window_surface_buffer->get_buffer(), 0, 0);
+    }
 }
 
 void WaylandWindow::draw()

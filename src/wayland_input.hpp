@@ -38,10 +38,6 @@ namespace tobi_engine
         
         window_registry->on_keypress(key);
 
-        /*if(key == 30)
-            xdg_toplevel_set_fullscreen(x_top, NULL);
-        if(key == 32)
-            xdg_toplevel_unset_fullscreen(x_top);*/
     }
 
     void keyboard_modifiers(void *data, struct wl_keyboard* keyboard, uint32_t serial, uint32_t dep, uint32_t lat, uint32_t lock, uint32_t group) 
@@ -83,7 +79,7 @@ namespace tobi_engine
 
     void pointer_motion(void *data, wl_pointer* pointer, uint32_t time, wl_fixed_t x, wl_fixed_t y)
     {
-        Logger::debug("pointer_motion()");
+        //Logger::debug("pointer_motion()");
     }
 
     void pointer_button(void *data, wl_pointer* poiner, uint32_t serial, uint32_t time, uint32_t button, uint32_t state)
