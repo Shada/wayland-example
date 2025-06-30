@@ -22,6 +22,7 @@ class WaylandClient
         xdg_wm_base* get_shell() const { return shell.get(); }
         wl_shm* get_shm() const { return shm.get(); }
         wl_keyboard* get_keyboard() const { return keyboard.get(); }
+        wl_pointer* get_pointer() const { return pointer.get(); }
         
         void set_compositor(wl_compositor* compositor) { this->compositor = CompositorPtr(compositor); }
         void set_subcompositor(wl_subcompositor* subcompositor) { this->subcompositor = SubCompositorPtr(subcompositor); }
@@ -29,6 +30,7 @@ class WaylandClient
         void set_shm(wl_shm* shm) { this->shm = ShmPtr(shm); }
         void set_seat(wl_seat* seat);
         void set_keyboard(wl_keyboard* keyboard) { this->keyboard = KeyboardPtr(keyboard); }
+        void set_pointer(wl_pointer* pointer) { this->pointer = PointerPtr(pointer); }
 
         void flush();
         void update();
@@ -52,6 +54,7 @@ class WaylandClient
         ShmPtr shm;
         SeatPtr seat;
         KeyboardPtr keyboard;
+        PointerPtr pointer;
 };
 
 }

@@ -6,6 +6,7 @@
 #include <memory>
 #include <stdexcept>
 
+#include <string>
 #include <unordered_map>
 #include <wayland-client.h>
 #include <wayland-client-protocol.h>
@@ -44,7 +45,7 @@ namespace tobi_engine
         }},
         { wl_seat_interface.name, [](wl_registry* r, uint32_t n, uint32_t v, WaylandClient* client) 
         {
-            client->set_seat(static_cast<wl_seat*>(bind_to_registry(r, n, &wl_seat_interface, 8, v)));
+            client->set_seat(static_cast<wl_seat*>(bind_to_registry(r, n, &wl_seat_interface, 4, v)));
         }},
     };
 
@@ -60,7 +61,7 @@ namespace tobi_engine
 
     static void seat_capabilities(void* data, struct wl_seat* seat, uint32_t capabilities) 
     {
-        Logger::debug("seat_capabilities()");
+        Logger::debug("seat_capabilities() = " + std::to_string(capabilities));
         auto client = static_cast<WaylandClient*>(data);
 
         if(capabilities & WL_SEAT_CAPABILITY_KEYBOARD && !client->get_keyboard()) 
@@ -68,6 +69,12 @@ namespace tobi_engine
             auto keyboard = wl_seat_get_keyboard(seat);
             wl_keyboard_add_listener(keyboard, &keyboard_listener, client);
             client->set_keyboard(keyboard);
+        }
+        if(capabilities & WL_SEAT_CAPABILITY_POINTER && !client->get_pointer())
+        {
+            auto pointer = wl_seat_get_pointer(seat);
+            wl_pointer_add_listener(pointer, &pointer_listener, client);
+            client->set_pointer(pointer);
         }
     }
 

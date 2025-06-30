@@ -1,8 +1,10 @@
 #pragma once
 
 #include <memory>
+#include <wayland-client-protocol.h>
 
 struct wl_keyboard;
+struct wl_pointer;
 struct wl_seat;
 struct wl_shm;
 struct xdg_wm_base;
@@ -22,6 +24,7 @@ namespace tobi_engine
 {
     
     struct WlKeyboardDeleter { void operator()(wl_keyboard* ptr) const; };
+    struct WlPointerDeleter { void operator()(wl_pointer* ptr) const; };
     struct WlSeatDeleter { void operator()(wl_seat* ptr) const; };
     struct WlShmDeleter { void operator()(wl_shm* ptr) const; };
     struct XdgShellDeleter { void operator()(xdg_wm_base* ptr) const; };
@@ -38,6 +41,7 @@ namespace tobi_engine
     struct XdgToplevelDeleter { void operator()(xdg_toplevel* ptr) const; };
 
     using KeyboardPtr = std::unique_ptr<wl_keyboard, WlKeyboardDeleter>;
+    using PointerPtr = std::unique_ptr<wl_pointer, WlPointerDeleter>;
     using SeatPtr = std::unique_ptr<wl_seat, WlSeatDeleter>;
     using ShmPtr = std::unique_ptr<wl_shm, WlShmDeleter>;
     using XdgShellPtr = std::unique_ptr<xdg_wm_base, XdgShellDeleter>;

@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <wayland-client-protocol.h>
+#include <wayland-util.h>
 
 #include "utils/logger.hpp"
 
@@ -61,6 +62,49 @@ namespace tobi_engine
         .key = keyboard_key,
         .modifiers = keyboard_modifiers,
         .repeat_info = keyboard_repeat
+    };
+
+    void pointer_enter(void *data, wl_pointer* poiner, uint32_t serial, wl_surface *surface, wl_fixed_t x, wl_fixed_t y)
+    {
+        Logger::debug("pointer_enter()");
+        auto window_registry = WindowRegistry::get_instance();
+        auto window =static_cast<Window*>(wl_surface_get_user_data(surface));
+        
+        window_registry->set_pointer_active_window(window->get_uid());
+
+    }
+    void pointer_leave(void *data, wl_pointer* poiner, uint32_t serial, wl_surface *surface)
+    {
+        Logger::debug("pointer_leave()");
+        auto window_registry = WindowRegistry::get_instance();
+
+        window_registry->unset_pointer_active_window();
+    }
+
+    void pointer_motion(void *data, wl_pointer* pointer, uint32_t time, wl_fixed_t x, wl_fixed_t y)
+    {
+        Logger::debug("pointer_motion()");
+    }
+
+    void pointer_button(void *data, wl_pointer* poiner, uint32_t serial, uint32_t time, uint32_t button, uint32_t state)
+    {
+        Logger::debug("pointer_button()");
+        auto window_registry = WindowRegistry::get_instance();
+        window_registry->on_pointer_button(button);
+    }
+
+    void pointer_axis(void* data, wl_pointer* pointer, uint32_t time, uint32_t axis, wl_fixed_t value)
+    {
+        Logger::debug("pointer_axis()");
+    }
+
+    static const struct wl_pointer_listener pointer_listener = 
+    {
+        .enter = pointer_enter,
+        .leave = pointer_leave,
+        .motion = pointer_motion,
+        .button = pointer_button,
+        .axis = pointer_axis,
     };
     
 }

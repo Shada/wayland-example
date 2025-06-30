@@ -58,7 +58,6 @@ static void toplevel_configure(void *data, struct xdg_toplevel *toplevel, int32_
 
 static void toplevel_close(void* data, struct xdg_toplevel *toplevel) 
 {
-    Logger::debug("toplevel_close()");
     auto window = (WaylandWindow*)data;
     window->close_window();
 }
@@ -79,7 +78,6 @@ static void toplevel_configure_bounds(void *data, struct xdg_toplevel *toplevel,
         // Optionally, clear any stored bounds
         // window->clear_recommended_bounds();
     }
-    Logger::debug("toplevel_configure_bounds done");
 }
 
 static void toplevel_wm_capabilities(void *data, struct xdg_toplevel *xdg_toplevel, struct wl_array *capabilities)
@@ -106,7 +104,6 @@ const struct wl_callback_listener callback_listener =
 void frame_new(void* data, struct wl_callback* callback, uint32_t callback_data) 
 {
     auto window = (WaylandWindow*)data;
-    Logger::debug("Frame start");
     if(!window->get_surface())
         return;
     
@@ -115,7 +112,6 @@ void frame_new(void* data, struct wl_callback* callback, uint32_t callback_data)
     window->set_callback(cb);
 
     window->draw();
-    Logger::debug("Frame end");
 }
     
 }
@@ -130,7 +126,7 @@ WaylandWindow::WaylandWindow(const WindowProperties &properties)
     initialize();
 }
 
-void WaylandWindow::toggle_decorations(bool enable)
+void WaylandWindow::update_decoration_mode(bool enable)
 {
     if(enable == is_decorated)
         return;
@@ -185,8 +181,6 @@ void WaylandWindow::initialize()
         wl_surface_attach(window_surface.get(), window_surface_buffer->get_buffer(), 0, 0);
         wl_surface_attach(content_surface.get(), content_surface_buffer->get_buffer(), 0, 0);
 
-        Logger::debug("Initialize Decorated window");
-
     }
     else
     {
@@ -204,14 +198,12 @@ void WaylandWindow::initialize()
         wl_surface_set_user_data(content_surface.get(), this);
 
         wl_surface_attach(content_surface.get(), content_surface_buffer->get_buffer(), 0, 0);
-        Logger::debug("Initialize Undecorated window");
     }
 
     x_toplevel.reset(xdg_surface_get_toplevel(x_surface.get()));
     xdg_toplevel_set_title(x_toplevel.get(), title.c_str());
     xdg_toplevel_set_app_id(x_toplevel.get(), title.c_str());
     xdg_toplevel_add_listener(x_toplevel.get(), &toplevel_listener, this);
-    Logger::debug("Initialized window");
     draw();
 }
 
@@ -230,11 +222,9 @@ void WaylandWindow::on_keypress(uint32_t key)
     if(key == 1)
         is_closed = true;
     if(key == 32 && !is_decorated)
-        pending_actions.push_back([this]() { toggle_decorations(true); } );
+        pending_actions.push_back([this]() { update_decoration_mode(true); } );
     if(key == 33 && is_decorated)
-        pending_actions.push_back([this]() { toggle_decorations(false); } );
-
-    printf("on_keypress() == %d\n", key);
+        pending_actions.push_back([this]() { update_decoration_mode(false); } );
 }
 
 void WaylandWindow::resize(uint32_t width, uint32_t height)
@@ -248,21 +238,16 @@ void WaylandWindow::draw()
 {   
     if(is_decorated)
     {
-        Logger::debug("Drawing Decorations");
         window_surface_buffer->fill(background_colour);
 
         wl_surface_damage(window_surface.get(), 0, 0, window_surface_buffer->get_width(), window_surface_buffer->get_height());
         wl_surface_commit(window_surface.get());
-
-        Logger::debug("Drawing Decorations Done");
     }
 
-    Logger::debug("Drawing Contents");
     content_surface_buffer->fill(0xFFFFFFFF);
 
     wl_surface_damage(content_surface.get(), 0, 0, content_surface_buffer->get_width(), content_surface_buffer->get_height());
     wl_surface_commit(content_surface.get());
-    Logger::debug("Drawing Contents Done");
 }
 
 } // namespace tobi_engine

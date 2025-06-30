@@ -9,6 +9,10 @@ namespace tobi_engine
     {
         if (ptr) wl_keyboard_destroy(ptr);
     }
+    void WlPointerDeleter::operator()(wl_pointer* ptr) const 
+    {
+        if (ptr) wl_pointer_destroy(ptr);
+    }
     void WlSeatDeleter::operator()(wl_seat* ptr) const 
     {
         if (ptr) wl_seat_destroy(ptr);

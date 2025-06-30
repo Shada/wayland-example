@@ -46,7 +46,7 @@ class WaylandWindow : public Window
 
     private:
         virtual void initialize() override;
-        void toggle_decorations(bool enable);
+        void update_decoration_mode(bool enable);
 
         void create_buffer();
 
