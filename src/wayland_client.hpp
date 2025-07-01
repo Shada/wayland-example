@@ -19,7 +19,7 @@ class WaylandClient
         wl_subcompositor* get_subcompositor() const { return subcompositor.get(); }
         xdg_wm_base* get_shell() const { return shell.get(); }
         wl_shm* get_shm() const { return shm.get(); }
-        wl_keyboard* get_keyboard() const { return keyboard.get(); }
+        bool is_keyboard_available() const { return keyboard != nullptr; }
         wl_pointer* get_pointer() const { return pointer.get(); }
         xkb_context* get_xkb_context() const { return kb_context.get(); }
         xkb_state* get_state() const { return kb_state.get(); }

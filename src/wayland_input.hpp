@@ -45,7 +45,7 @@ namespace tobi_engine
     {
         Logger::debug("keyboard_enter()");
         auto window_registry = WindowRegistry::get_instance();
-        auto window =static_cast<Window*>(wl_surface_get_user_data(surface));
+        auto window = static_cast<Window*>(wl_surface_get_user_data(surface));
         
         window_registry->set_active_window(window->get_uid());
 
@@ -62,13 +62,19 @@ namespace tobi_engine
     {
         auto window_registry = WindowRegistry::get_instance();
         Logger::debug("keyboard_key() " + std::to_string(key));
-        
-        window_registry->on_key(key + 8, state);
+        uint32_t keycode = key + 8;
+
+        window_registry->on_key(keycode, state);
     }
 
-    void keyboard_modifiers(void *data, struct wl_keyboard* keyboard, uint32_t serial, uint32_t dep, uint32_t lat, uint32_t lock, uint32_t group) 
+    void keyboard_modifiers(void *data, struct wl_keyboard* keyboard, uint32_t serial, uint32_t depressed, uint32_t latched, uint32_t locked, uint32_t group) 
     {
         Logger::debug("keyboard_modifiers()");
+        auto client =static_cast<WaylandClient*>(data);
+
+
+       xkb_state_update_mask(client->get_state(),
+               depressed, latched, locked, 0, 0, group);
     }
 
     void keyboard_repeat(void *data, struct wl_keyboard* keyboard, int32_t rate, int32_t delay) 

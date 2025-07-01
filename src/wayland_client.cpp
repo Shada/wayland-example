@@ -66,17 +66,28 @@ namespace tobi_engine
         Logger::debug("seat_capabilities() = " + std::to_string(capabilities));
         auto client = static_cast<WaylandClient*>(data);
 
-        if(capabilities & WL_SEAT_CAPABILITY_KEYBOARD && !client->get_keyboard()) 
+        bool is_keyboard_supported = capabilities & WL_SEAT_CAPABILITY_KEYBOARD;
+        if(is_keyboard_supported && !client->is_keyboard_available()) 
         {
             auto keyboard = wl_seat_get_keyboard(seat);
             wl_keyboard_add_listener(keyboard, &keyboard_listener, client);
             client->set_keyboard(keyboard);
         }
-        if(capabilities & WL_SEAT_CAPABILITY_POINTER && !client->get_pointer())
+        else if(!is_keyboard_supported && client->is_keyboard_available()) 
+        {
+            client->set_keyboard(nullptr);
+        }
+
+        bool is_pointer_supported = capabilities & WL_SEAT_CAPABILITY_POINTER;
+        if(is_pointer_supported && !client->get_pointer())
         {
             auto pointer = wl_seat_get_pointer(seat);
             wl_pointer_add_listener(pointer, &pointer_listener, client);
             client->set_pointer(pointer);
+        }
+        else if(!is_pointer_supported && client->get_pointer())
+        {
+            client->set_pointer(nullptr);
         }
     }
 

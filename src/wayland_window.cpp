@@ -213,9 +213,16 @@ void WaylandWindow::update()
 
 void WaylandWindow::on_key(uint32_t key, uint32_t state)
 {
-    auto sym = xkb_state_key_get_one_sym(client->get_state(), key);
-    Logger::debug("xkb_state_key_get_one_sym() == " + std::to_string(sym));
-    Logger::debug("XKB_KEY_Escape == " + std::to_string(XKB_KEY_Escape));
+    char buf[128];
+    xkb_keysym_t sym = xkb_state_key_get_one_sym(client->get_state(), key);
+    xkb_keysym_get_name(sym, buf, sizeof(buf));
+
+    const char *action =
+            state == WL_KEYBOARD_KEY_STATE_PRESSED ? "press" : "release";
+    fprintf(stderr, "key %s: sym: %-12s (%d), ", action, buf, sym);
+    xkb_state_key_get_utf8(client->get_state(), key,
+                       buf, sizeof(buf));
+    fprintf(stderr, "utf8: '%s'\n", buf);
     if(state == WL_KEYBOARD_KEY_STATE_RELEASED)
     {
         switch (sym) 
@@ -223,15 +230,19 @@ void WaylandWindow::on_key(uint32_t key, uint32_t state)
             case XKB_KEY_Escape:
                 is_closed = true;
                 break;
+            case XKB_KEY_d:
             case XKB_KEY_D:
                 pending_actions.push_back([this]() { update_decoration_mode(true); } );
                 break;
+            case XKB_KEY_f:
             case XKB_KEY_F: 
                 pending_actions.push_back([this]() { update_decoration_mode(false); } );
                 break;
+            case XKB_KEY_a:
             case XKB_KEY_A:
                 xdg_toplevel_set_fullscreen(x_toplevel.get(), nullptr);
                 break;
+            case XKB_KEY_s:
             case XKB_KEY_S:
                 xdg_toplevel_unset_fullscreen(x_toplevel.get());
                 break;
