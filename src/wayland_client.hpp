@@ -4,8 +4,6 @@
 
 #include "wayland_deleters.hpp"
 
-struct zxdg_decoration_manager_v1;
-
 namespace tobi_engine
 {
 class WaylandWindow;
@@ -23,6 +21,8 @@ class WaylandClient
         wl_shm* get_shm() const { return shm.get(); }
         wl_keyboard* get_keyboard() const { return keyboard.get(); }
         wl_pointer* get_pointer() const { return pointer.get(); }
+        xkb_context* get_xkb_context() const { return kb_context.get(); }
+        xkb_state* get_state() const { return kb_state.get(); }
         
         void set_compositor(wl_compositor* compositor) { this->compositor = CompositorPtr(compositor); }
         void set_subcompositor(wl_subcompositor* subcompositor) { this->subcompositor = SubCompositorPtr(subcompositor); }
@@ -31,6 +31,8 @@ class WaylandClient
         void set_seat(wl_seat* seat);
         void set_keyboard(wl_keyboard* keyboard) { this->keyboard = KeyboardPtr(keyboard); }
         void set_pointer(wl_pointer* pointer) { this->pointer = PointerPtr(pointer); }
+        void set_keymap(xkb_keymap* keymap) { this->kb_keymap = KbKeymapPtr(keymap); }
+        void set_kb_state(xkb_state* state) { this->kb_state = KbStatePtr(state); }
 
         void flush();
         void update();
@@ -55,6 +57,9 @@ class WaylandClient
         SeatPtr seat;
         KeyboardPtr keyboard;
         PointerPtr pointer;
+        KbContextPtr kb_context;
+        KbKeymapPtr kb_keymap;
+        KbStatePtr kb_state;
 };
 
 }

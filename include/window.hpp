@@ -26,7 +26,8 @@ namespace tobi_engine
 
         virtual void update() = 0;
         virtual bool should_close() = 0;
-        virtual void on_keypress(uint32_t key) = 0;
+        virtual void on_key(uint32_t key, uint32_t state) = 0;
+        virtual void on_pointer_button(uint32_t button, uint32_t state) = 0;
 
         uint64_t get_uid() { return uid; }
     

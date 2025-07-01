@@ -1,8 +1,10 @@
 #pragma once
 
 #include <memory>
-#include <wayland-client-protocol.h>
 
+struct xkb_state;
+struct xkb_keymap;
+struct xkb_context;
 struct wl_keyboard;
 struct wl_pointer;
 struct wl_seat;
@@ -23,6 +25,9 @@ struct wl_buffer;
 namespace tobi_engine
 {
     
+    struct KbStateDeleter { void operator()(xkb_state* ptr) const; };
+    struct KbKeymapDeleter { void operator()(xkb_keymap* ptr) const; };
+    struct KbContextDeleter { void operator()(xkb_context* ptr) const; };
     struct WlKeyboardDeleter { void operator()(wl_keyboard* ptr) const; };
     struct WlPointerDeleter { void operator()(wl_pointer* ptr) const; };
     struct WlSeatDeleter { void operator()(wl_seat* ptr) const; };
@@ -40,6 +45,9 @@ namespace tobi_engine
     struct XdgSurfaceDeleter { void operator()(xdg_surface* ptr) const; };
     struct XdgToplevelDeleter { void operator()(xdg_toplevel* ptr) const; };
 
+    using KbStatePtr = std::unique_ptr<xkb_state, KbStateDeleter>;
+    using KbKeymapPtr = std::unique_ptr<xkb_keymap, KbKeymapDeleter>;
+    using KbContextPtr = std::unique_ptr<xkb_context, KbContextDeleter>;
     using KeyboardPtr = std::unique_ptr<wl_keyboard, WlKeyboardDeleter>;
     using PointerPtr = std::unique_ptr<wl_pointer, WlPointerDeleter>;
     using SeatPtr = std::unique_ptr<wl_seat, WlSeatDeleter>;

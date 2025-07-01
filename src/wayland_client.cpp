@@ -13,8 +13,10 @@
 #include <wayland-util.h>
 #include "wayland-xdg-shell-client-protocol.h"
 #include "wayland-xdg-decoration-unstable-v1-client-protocol.h"
+#include <xkbcommon/xkbcommon.h>
 
 #include "utils/logger.hpp"
+#include "wayland_deleters.hpp"
 #include "window_registry.hpp"
 #include "wayland_window.hpp"
 #include "wayland_input.hpp"
@@ -165,7 +167,9 @@ namespace tobi_engine
             shell(nullptr),
             shm(nullptr),
             seat(nullptr),
-            keyboard(nullptr)
+            keyboard(nullptr),
+            kb_context(nullptr),
+            kb_state(nullptr)
     {
         initialize();
     }
@@ -200,6 +204,8 @@ namespace tobi_engine
 
         // Round-trip to synchronize with the server
         wl_display_roundtrip(display.get());
+
+        kb_context = KbContextPtr(xkb_context_new(XKB_CONTEXT_NO_FLAGS));
     }
     
 }

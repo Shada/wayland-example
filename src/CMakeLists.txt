@@ -31,6 +31,9 @@ pkg_check_modules(wayland-cursor REQUIRED wayland-cursor)
 target_link_libraries(wayland_window ${wayland-client_LIBRARIES})
 target_link_libraries(wayland_window ${wayland-cursor_LIBRARIES})
 
+pkg_check_modules(xkbcommon REQUIRED xkbcommon)
+target_link_libraries(wayland_window ${xkbcommon_LIBRARIES})
+
 find_package(ECM REQUIRED)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${ECM_FIND_MODULE_DIR})
 # Use Wayland scanner to generate protocol files (header and source) from the Wayland XML specification

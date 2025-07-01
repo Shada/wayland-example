@@ -22,14 +22,6 @@ class WaylandWindow : public Window
         WaylandWindow(const WindowProperties &properties);
         virtual ~WaylandWindow() override {};
         
-        wl_surface* get_surface() 
-        {
-            if(is_decorated && window_surface) 
-                return window_surface.get();
-            if(content_surface)
-                return content_surface.get();
-            return nullptr;
-        }
         void set_callback(wl_callback *callback) { this->callback.reset(callback); }
 
         void resize(uint32_t width, uint32_t heigth);
@@ -38,7 +30,8 @@ class WaylandWindow : public Window
 
         virtual bool should_close() override { return is_closed; }
         virtual void update() override;
-        virtual void on_keypress(uint32_t key) override;
+        virtual void on_key(uint32_t key, uint32_t state) override;
+        virtual void on_pointer_button(uint32_t button, uint32_t state) override;
 
         bool is_configured(){ return window_surface_buffer != nullptr; }
 
@@ -68,9 +61,9 @@ class WaylandWindow : public Window
         uint32_t            background_colour = 0xFF00DDDD;
         bool                is_closed = false;
 
-        static constexpr uint32_t  DECORATIONS_BORDER_SIZE = 4;
-        static constexpr uint32_t  DECORATIONS_TOPBAR_SIZE = 32;
-        static constexpr uint32_t  DECORATIONS_BUTTON_SIZE = 28;
+        static constexpr uint32_t DECORATIONS_BORDER_SIZE = 4;
+        static constexpr uint32_t DECORATIONS_TOPBAR_SIZE = 32;
+        static constexpr uint32_t DECORATIONS_BUTTON_SIZE = 28;
 
         bool is_decorated = true;
 };

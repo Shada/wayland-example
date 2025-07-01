@@ -32,8 +32,8 @@ public:
     void unset_active_window() { keyboard_active_window = nullptr; }
     void unset_pointer_active_window() { pointer_active_window = nullptr; }
 
-    void on_keypress(uint32_t key);
-    void on_pointer_button(uint32_t button) {};
+    void on_key(uint32_t key, uint32_t state);
+    void on_pointer_button(uint32_t button, uint32_t state);
 
 private:
 

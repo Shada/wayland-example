@@ -25,10 +25,16 @@ namespace tobi_engine
         return window;
     }
 
-    void WindowRegistry::on_keypress(uint32_t key)
+    void WindowRegistry::on_key(uint32_t key, uint32_t state)
     {
         if(keyboard_active_window)
-            keyboard_active_window->on_keypress(key); 
+            keyboard_active_window->on_key(key, state); 
+    }
+
+    void WindowRegistry::on_pointer_button(uint32_t button, uint32_t state)
+    {
+        if(pointer_active_window)
+            pointer_active_window->on_pointer_button(button, state);
     }
 
 }

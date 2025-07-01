@@ -1,10 +1,23 @@
 #include "wayland_deleters.hpp"
 
 #include <wayland-client-protocol.h>
+#include <xkbcommon/xkbcommon.h>
 #include "wayland-xdg-shell-client-protocol.h"
 
 namespace tobi_engine
 {
+    void KbStateDeleter::operator()(xkb_state* ptr) const 
+    {
+        if (ptr) xkb_state_unref(ptr);
+    }
+    void KbKeymapDeleter::operator()(xkb_keymap* ptr) const 
+    {
+        if (ptr) xkb_keymap_unref(ptr);
+    }
+    void KbContextDeleter::operator()(xkb_context* ptr) const 
+    {
+        if (ptr) xkb_context_unref(ptr);
+    }
     void WlKeyboardDeleter::operator()(wl_keyboard* ptr) const 
     {
         if (ptr) wl_keyboard_destroy(ptr);

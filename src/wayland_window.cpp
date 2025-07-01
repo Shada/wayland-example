@@ -10,6 +10,8 @@
 
 #include <wayland-client-protocol.h>
 #include <wayland-client.h>
+#include <wayland-cursor.h>
+#include <xkbcommon/xkbcommon.h>
 #include "wayland-xdg-shell-client-protocol.h"
 
 #include "wayland_client.hpp"
@@ -94,26 +96,17 @@ const struct xdg_toplevel_listener toplevel_listener =
     toplevel_wm_capabilities
 };
 
-void frame_new(void* data, struct wl_callback* callback, uint32_t callback_data);
-
-const struct wl_callback_listener callback_listener = 
+void surface_ready_callback(void* data, struct wl_callback* callback, uint32_t callback_data) 
 {
-    frame_new
-};
-
-
-void frame_new(void* data, struct wl_callback* callback, uint32_t callback_data) 
-{
-    auto window = (WaylandWindow*)data;
-    if(!window->get_surface())
-        return;
+    auto window = static_cast<WaylandWindow*>(data);
     
-    auto cb = wl_surface_frame(window->get_surface());
-    wl_callback_add_listener(cb, &callback_listener, window);
-    window->set_callback(cb);
-
-    window->draw();
+    window->set_callback(nullptr);
 }
+
+const struct wl_callback_listener surface_ready_callback_listener = 
+{
+    .done=surface_ready_callback
+};
     
 }
 
@@ -171,7 +164,7 @@ void WaylandWindow::initialize()
         wl_subsurface_set_position(content_subsurface.get(), DECORATIONS_BORDER_SIZE, DECORATIONS_TOPBAR_SIZE);
 
         set_callback(wl_surface_frame(window_surface.get()));
-        wl_callback_add_listener(callback.get(), &callback_listener, this);
+        wl_callback_add_listener(callback.get(), &surface_ready_callback_listener, this);
 
         x_surface.reset(xdg_wm_base_get_xdg_surface(client->get_shell(), window_surface.get()));
         xdg_surface_add_listener(x_surface.get(), &xdg_surface_listener, this);
@@ -191,7 +184,7 @@ void WaylandWindow::initialize()
         window_surface = nullptr;
 
         set_callback(wl_surface_frame(content_surface.get()));
-        wl_callback_add_listener(callback.get(), &callback_listener, this);
+        wl_callback_add_listener(callback.get(), &surface_ready_callback_listener, this);
 
         x_surface.reset(xdg_wm_base_get_xdg_surface(client->get_shell(), content_surface.get()));
         xdg_surface_add_listener(x_surface.get(), &xdg_surface_listener, this);
@@ -218,18 +211,40 @@ void WaylandWindow::update()
     pending_actions.clear();
 }
 
-void WaylandWindow::on_keypress(uint32_t key)
+void WaylandWindow::on_key(uint32_t key, uint32_t state)
 {
-    if(key == 1)
-        is_closed = true;
-    if(key == 32 && !is_decorated)
-        pending_actions.push_back([this]() { update_decoration_mode(true); } );
-    if(key == 33 && is_decorated)
-        pending_actions.push_back([this]() { update_decoration_mode(false); } );
-    if(key == 30)
-        xdg_toplevel_set_fullscreen(x_toplevel.get(), nullptr);
-    if(key == 31)
-        xdg_toplevel_unset_fullscreen(x_toplevel.get());
+    auto sym = xkb_state_key_get_one_sym(client->get_state(), key);
+    Logger::debug("xkb_state_key_get_one_sym() == " + std::to_string(sym));
+    Logger::debug("XKB_KEY_Escape == " + std::to_string(XKB_KEY_Escape));
+    if(state == WL_KEYBOARD_KEY_STATE_RELEASED)
+    {
+        switch (sym) 
+        {
+            case XKB_KEY_Escape:
+                is_closed = true;
+                break;
+            case XKB_KEY_D:
+                pending_actions.push_back([this]() { update_decoration_mode(true); } );
+                break;
+            case XKB_KEY_F: 
+                pending_actions.push_back([this]() { update_decoration_mode(false); } );
+                break;
+            case XKB_KEY_A:
+                xdg_toplevel_set_fullscreen(x_toplevel.get(), nullptr);
+                break;
+            case XKB_KEY_S:
+                xdg_toplevel_unset_fullscreen(x_toplevel.get());
+                break;
+        }
+    }
+}
+
+void WaylandWindow::on_pointer_button(uint32_t button, uint32_t state)
+{
+    if(button == 272) // left button
+        Logger::debug("left click!");
+    if(button == 273) // right button
+        Logger::debug("right click!");
 }
 
 void WaylandWindow::resize(uint32_t width, uint32_t height)
@@ -242,6 +257,7 @@ void WaylandWindow::resize(uint32_t width, uint32_t height)
         window_surface_buffer->resize(width + DECORATIONS_BORDER_SIZE * 2, height + DECORATIONS_BORDER_SIZE + DECORATIONS_TOPBAR_SIZE);
         wl_surface_attach(window_surface.get(), window_surface_buffer->get_buffer(), 0, 0);
     }
+    draw();
 }
 
 void WaylandWindow::draw()
