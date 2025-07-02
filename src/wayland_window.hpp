@@ -61,9 +61,10 @@ class WaylandWindow : public Window
         uint32_t            background_colour = 0xFF00DDDD;
         bool                is_closed = false;
 
-        static constexpr uint32_t DECORATIONS_BORDER_SIZE = 4;
-        static constexpr uint32_t DECORATIONS_TOPBAR_SIZE = 32;
-        static constexpr uint32_t DECORATIONS_BUTTON_SIZE = 28;
+        static const uint32_t DECORATIONS_BORDER_SIZE = 4;
+        static const uint32_t DECORATIONS_TOPBAR_SIZE = 32;
+        static const uint32_t DECORATIONS_BUTTON_SIZE = 28;
+        static const uint32_t WINDOW_MINIMUM_SIZE = 10;
 
         bool is_decorated = true;
 };

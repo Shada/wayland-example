@@ -116,7 +116,7 @@ namespace tobi_engine
         else if(bind_version < server_version)
         {
             Logger::debug( "Server supports " + std::string(interface->name) + " version " + std::to_string(server_version)
-                + ", but client only supports up to " + std::to_string(server_version));
+                + ", but client only supports up to " + std::to_string(client_version));
         }
 
         return wl_registry_bind(registry, name, interface, bind_version);

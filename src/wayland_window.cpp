@@ -261,13 +261,26 @@ void WaylandWindow::on_pointer_button(uint32_t button, uint32_t state)
 void WaylandWindow::resize(uint32_t width, uint32_t height)
 {
     Logger::debug("resize(" + std::to_string(width) + ", " + std::to_string(height) + ")");
-    content_surface_buffer->resize(width, height);
-    wl_surface_attach(content_surface.get(), content_surface_buffer->get_buffer(), 0, 0);
+
     if(is_decorated)
     {
-        window_surface_buffer->resize(width + DECORATIONS_BORDER_SIZE * 2, height + DECORATIONS_BORDER_SIZE + DECORATIONS_TOPBAR_SIZE);
+        constexpr uint32_t decoration_width =  DECORATIONS_BORDER_SIZE * 2;
+        constexpr uint32_t decoration_height = DECORATIONS_BORDER_SIZE + DECORATIONS_TOPBAR_SIZE;
+        this->properties.width =  width > decoration_width + WINDOW_MINIMUM_SIZE ? width - decoration_width : WINDOW_MINIMUM_SIZE; 
+        this->properties.height = height > decoration_height + WINDOW_MINIMUM_SIZE ? height - decoration_height : WINDOW_MINIMUM_SIZE;
+
+        window_surface_buffer->resize(this->properties.width + decoration_width, this->properties.height + decoration_height);
         wl_surface_attach(window_surface.get(), window_surface_buffer->get_buffer(), 0, 0);
     }
+    else
+    {
+        this->properties.width = width > WINDOW_MINIMUM_SIZE ? width : WINDOW_MINIMUM_SIZE; 
+        this->properties.height = height > WINDOW_MINIMUM_SIZE ? height : WINDOW_MINIMUM_SIZE;
+    }
+
+    content_surface_buffer->resize(this->properties.width, this->properties.height);
+    wl_surface_attach(content_surface.get(), content_surface_buffer->get_buffer(), 0, 0);
+
     draw();
 }
 

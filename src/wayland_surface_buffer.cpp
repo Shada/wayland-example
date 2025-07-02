@@ -24,6 +24,7 @@ namespace tobi_engine
             size(height * width * PIXEL_SIZE),
             memory(nullptr)
     {
+        Logger::debug("width = " + std::to_string(width) + ", height = " + std::to_string(height));
         initialize();
     }
 
@@ -47,6 +48,7 @@ namespace tobi_engine
 
     void SurfaceBuffer::resize(uint32_t width, uint32_t height) 
     { 
+        Logger::debug("width = " + std::to_string(width) + ", height = " + std::to_string(height));
         if(width == this->width && height == this->height) 
             return;
 
