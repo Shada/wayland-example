@@ -4,12 +4,12 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "wayland_deleters.hpp"
+#include "wayland_surface.hpp"
 #include "wayland_surface_buffer.hpp"
 #include "window.hpp"
-
-struct wl_subsurface;
 
 namespace tobi_engine
 {
@@ -33,40 +33,44 @@ class WaylandWindow : public Window
         virtual void on_key(uint32_t key, uint32_t state) override;
         virtual void on_pointer_button(uint32_t button, uint32_t state) override;
 
-        bool is_configured(){ return window_surface_buffer != nullptr; }
+        bool is_configured(){ return !surfaces.empty(); }
 
         void draw() ;
 
     private:
+        using WaylandSurfacePtr = std::shared_ptr<WaylandSurface>;
+        
         virtual void initialize() override;
         void update_decoration_mode(bool enable);
 
         void create_buffer();
 
         std::shared_ptr<WaylandClient> client;
-        std::unique_ptr<SurfaceBuffer> window_surface_buffer;
-        std::unique_ptr<SurfaceBuffer> content_surface_buffer;
+
+        std::vector<WaylandSurfacePtr> surfaces;
+
+        CallbackPtr         callback;
+        XdgSurfacePtr       x_surface;
+        XdgToplevelPtr      x_toplevel;
 
         std::vector<std::function<void()>> pending_actions;
-
-        SurfacePtr          window_surface = nullptr;
-        CallbackPtr         callback = nullptr;
-        XdgSurfacePtr       x_surface = nullptr;
-        XdgToplevelPtr      x_toplevel = nullptr;
-
-        SurfacePtr          content_surface = nullptr;
-        SubSurfacePtr       content_subsurface = nullptr;
 
         std::string         title;
         uint32_t            background_colour = 0xFF00DDDD;
         bool                is_closed = false;
 
-        static const uint32_t DECORATIONS_BORDER_SIZE = 4;
-        static const uint32_t DECORATIONS_TOPBAR_SIZE = 32;
-        static const uint32_t DECORATIONS_BUTTON_SIZE = 28;
-        static const uint32_t WINDOW_MINIMUM_SIZE = 10;
+        const uint32_t DECORATIONS_BORDER_SIZE = 4;
+        const uint32_t DECORATIONS_TOPBAR_SIZE = 32;
+        const uint32_t DECORATIONS_BUTTON_SIZE = 28;
+        const uint32_t WINDOW_MINIMUM_SIZE = 10;
 
         bool is_decorated = true;
+};
+
+struct SurfaceUserData
+{
+    WaylandWindow* window;
+    enum SurfaceType { Decoration, Content } surface_type;
 };
 
 }

@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <format>
 #include <stdexcept>
 #include <string>
 #include <sys/mman.h>
@@ -24,7 +25,7 @@ namespace tobi_engine
             size(height * width * PIXEL_SIZE),
             memory(nullptr)
     {
-        Logger::debug("width = " + std::to_string(width) + ", height = " + std::to_string(height));
+        LOG_DEBUG("width = {}, height = {}", width, height);
         initialize();
     }
 
@@ -48,7 +49,7 @@ namespace tobi_engine
 
     void SurfaceBuffer::resize(uint32_t width, uint32_t height) 
     { 
-        Logger::debug("width = " + std::to_string(width) + ", height = " + std::to_string(height));
+        LOG_DEBUG("width = {}, height = {}", width, height);
         if(width == this->width && height == this->height) 
             return;
 
@@ -79,7 +80,7 @@ namespace tobi_engine
         auto name = std::string("/window-handle-")
             .append(generate_random_string(10));
 
-        Logger::debug("Created SHM: " + name);
+        LOG_DEBUG("Created SHM: {}", name);
 
         file_descriptor = memfd_create(name.c_str(), 0);
         if(file_descriptor == -1)

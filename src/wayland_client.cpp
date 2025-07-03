@@ -63,7 +63,7 @@ namespace tobi_engine
 
     static void seat_capabilities(void* data, struct wl_seat* seat, uint32_t capabilities) 
     {
-        Logger::debug("seat_capabilities() = " + std::to_string(capabilities));
+        LOG_DEBUG("seat_capabilities() = {}", capabilities);
         auto client = static_cast<WaylandClient*>(data);
 
         bool is_keyboard_supported = capabilities & WL_SEAT_CAPABILITY_KEYBOARD;
@@ -93,7 +93,7 @@ namespace tobi_engine
 
     static void seat_name(void* data, struct wl_seat* seat, const char* name) 
     {
-        Logger::debug("seat_name()");
+        LOG_DEBUG("seat_name()");
     }
 
     const struct wl_seat_listener seat_listener = 
@@ -104,19 +104,19 @@ namespace tobi_engine
 
     void* bind_to_registry(wl_registry *registry, uint32_t name, const wl_interface* interface, uint32_t client_version, uint32_t server_version)
     {
-        Logger::debug("Adding " + std::string(interface->name) + " to registry");
+        LOG_DEBUG("Adding {} to registry", interface->name);
 
         const uint32_t bind_version = std::min(server_version, client_version);
         
         if (bind_version < client_version) 
         {
-            throw std::runtime_error("Client supports " + std::string(interface->name) + " version " + std::to_string(client_version) +
-                        ", but server only supports up to " + std::to_string(server_version));
+            throw std::runtime_error(std::format("Client supports {} version {}, but server only supports up to version {}.", 
+                interface->name, client_version, server_version));
         }
         else if(bind_version < server_version)
         {
-            Logger::debug( "Server supports " + std::string(interface->name) + " version " + std::to_string(server_version)
-                + ", but client only supports up to " + std::to_string(client_version));
+            LOG_DEBUG("Server supports {} version {}, but client only supports up to ",
+                interface->name, server_version, client_version);
         }
 
         return wl_registry_bind(registry, name, interface, bind_version);
@@ -146,7 +146,7 @@ namespace tobi_engine
     void registry_global_remove(void *data, wl_registry *registry, uint32_t name) 
     {
         // This function will be called when a global object is removed from the registry
-        Logger::debug("Global object removed: name " + std::to_string(name));
+        LOG_DEBUG("Global object removed: {}", name);
     }
 
     const struct wl_registry_listener registry_listener = 

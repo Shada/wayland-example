@@ -22,6 +22,8 @@ struct xdg_surface;
 struct xdg_toplevel;
 struct wl_buffer;
 
+struct wl_proxy;
+
 namespace tobi_engine
 {
     
@@ -64,4 +66,6 @@ namespace tobi_engine
     using BufferPtr = std::unique_ptr<wl_buffer, WlBufferDeleter>;
     using XdgSurfacePtr = std::unique_ptr<xdg_surface, XdgSurfaceDeleter>;
     using XdgToplevelPtr = std::unique_ptr<xdg_toplevel, XdgToplevelDeleter>;
+
+
 }

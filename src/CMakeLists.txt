@@ -5,6 +5,7 @@ add_library(wayland_window STATIC
     window_registry.cpp
     wayland_client.cpp
     wayland_surface_buffer.cpp
+    wayland_surface.cpp
     wayland_deleters.cpp
     window.cpp
     utils/logger.cpp

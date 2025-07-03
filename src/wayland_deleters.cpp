@@ -3,6 +3,7 @@
 #include <wayland-client-protocol.h>
 #include <xkbcommon/xkbcommon.h>
 #include "wayland-xdg-shell-client-protocol.h"
+#include "wayland_window.hpp"
 
 namespace tobi_engine
 {
@@ -57,7 +58,17 @@ namespace tobi_engine
 
     void WlSurfaceDeleter::operator()(wl_surface* ptr) const 
     {
-        if (ptr) wl_surface_destroy(ptr);
+        if(!ptr)
+            return;
+        
+        auto t = static_cast<SurfaceUserData*>(wl_surface_get_user_data(ptr));
+        if(t)
+        {
+            delete t;
+            t = nullptr;
+        }
+        wl_surface_destroy(ptr);
+        
     }
     void WlSubSurfaceDeleter::operator()(wl_subsurface* ptr) const 
     {
