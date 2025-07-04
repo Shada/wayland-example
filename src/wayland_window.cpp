@@ -75,12 +75,12 @@ static void toplevel_configure_bounds(void *data, struct xdg_toplevel *toplevel,
     LOG_DEBUG("toplevel_configure_bounds");
     if (width > 0 && height > 0) 
     {
-        LOG_DEBUG("toplevel_configure_bounds: recommended bounds = {}x{}", width, height);
+        LOG_DEBUG("recommended bounds = {}x{}", width, height);
         // Optionally, store these bounds in your window class for later use
         // window->set_recommended_bounds(width, height);
     } else 
     {
-        LOG_DEBUG("toplevel_configure_bounds: bounds unknown or not set");
+        LOG_DEBUG("bounds unknown or not set");
         // Optionally, clear any stored bounds
         // window->clear_recommended_bounds();
     }
@@ -198,9 +198,14 @@ void WaylandWindow::on_key(uint32_t key, uint32_t state)
     const char *action =
             state == WL_KEYBOARD_KEY_STATE_PRESSED ? "press" : "release";
     LOG_DEBUG("key {}: sym: {} ({})", action, buf, sym);
+
     xkb_state_key_get_utf8(client->get_state(), key,
-                       buf, sizeof(buf));
-    LOG_DEBUG("utf8: {}", buf);
+                        buf, sizeof(buf));
+    if(buf[0] > 32)
+    {
+        LOG_DEBUG("utf8: {}", (uint8_t(buf[0])));
+    }
+
     if(state == WL_KEYBOARD_KEY_STATE_RELEASED)
     {
         switch (sym) 

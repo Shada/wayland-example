@@ -14,13 +14,6 @@ namespace tobi_engine
     // TODO: Make configurable
     LogLevel Logger::loglevel = LogLevel::Debug;
 
-    const std::string location_message(const std::source_location &location)
-    {
-        auto filename = std::filesystem::path(location.file_name()).filename().string();
-
-        return std::format("({}:{}): ", filename, location.line());
-    }
-
     void Logger::log(LogLevel level, const std::string& message)
     {
         std::lock_guard<std::mutex> lock(log_mutex);
