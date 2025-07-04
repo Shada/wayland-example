@@ -13,7 +13,10 @@ int main() {
     uint32_t c = 200;
     
     while(!window->should_close())
+    {
         window->update();
+    }
+        
 
     return 0;
 }

@@ -113,6 +113,8 @@ const struct wl_callback_listener surface_ready_callback_listener =
     
 }
 
+PointerEvent WaylandWindow::pointer_event = {};
+
 WaylandWindow::WaylandWindow(const WindowProperties &properties)
     :   Window(properties),
         client(WaylandClient::get_instance()),
@@ -173,6 +175,9 @@ void WaylandWindow::initialize()
 
     x_toplevel.reset(xdg_surface_get_toplevel(x_surface.get()));
     xdg_toplevel_set_title(x_toplevel.get(), title.c_str());
+    xdg_toplevel_set_min_size(x_toplevel.get(), 
+        WINDOW_MINIMUM_SIZE + DECORATIONS_TOPBAR_SIZE + DECORATIONS_BORDER_SIZE, 
+        WINDOW_MINIMUM_SIZE + DECORATIONS_TOPBAR_SIZE + DECORATIONS_BORDER_SIZE);
     xdg_toplevel_set_app_id(x_toplevel.get(), title.c_str());
     xdg_toplevel_add_listener(x_toplevel.get(), &toplevel_listener, this);
     
@@ -239,6 +244,15 @@ void WaylandWindow::on_pointer_button(uint32_t button, uint32_t state)
         LOG_DEBUG("left click!");
     if(button == 273) // right button
         LOG_DEBUG("right click! {}", button);
+}
+void WaylandWindow::on_pointer_motion(int32_t x, int32_t y)
+{
+    LOG_DEBUG("Pointer moved to: ({}, {})", x, y);
+    
+    pointer_position.x = x;
+    pointer_position.y = y;
+
+    WaylandClient::get_instance()->update_cursor("nw-resize");
 }
 
 void WaylandWindow::resize(uint32_t width, uint32_t height)

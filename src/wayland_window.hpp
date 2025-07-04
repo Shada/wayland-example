@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "wayland_cursor.hpp"
 #include "wayland_deleters.hpp"
 #include "wayland_surface.hpp"
 #include "wayland_surface_buffer.hpp"
@@ -15,6 +16,21 @@ namespace tobi_engine
 {
 
 class WaylandClient;
+
+struct Position
+{
+    int32_t x = 0;
+    int32_t y = 0;
+};
+
+struct PointerEvent
+{
+    Position position;
+    uint32_t button = 0;
+    uint32_t state = 0; // 0 for released, 1 for pressed
+    uint32_t serial = 0; // Serial number for the event
+    wl_pointer *pointer = nullptr;
+};
 
 class WaylandWindow : public Window
 {
@@ -33,9 +49,14 @@ class WaylandWindow : public Window
         virtual void on_key(uint32_t key, uint32_t state) override;
         virtual void on_pointer_button(uint32_t button, uint32_t state) override;
 
+        virtual void on_pointer_motion(int32_t x, int32_t y) override;
+
         bool is_configured(){ return !surfaces.empty(); }
 
-        void draw() ;
+        void draw();
+
+        // public static for now.
+        static PointerEvent pointer_event;
 
     private:
         using WaylandSurfacePtr = std::shared_ptr<WaylandSurface>;
@@ -56,7 +77,6 @@ class WaylandWindow : public Window
         std::vector<std::function<void()>> pending_actions;
 
         std::string         title;
-        uint32_t            background_colour = 0xFF00DDDD;
         bool                is_closed = false;
 
         const uint32_t DECORATIONS_BORDER_SIZE = 4;
@@ -64,7 +84,11 @@ class WaylandWindow : public Window
         const uint32_t DECORATIONS_BUTTON_SIZE = 28;
         const uint32_t WINDOW_MINIMUM_SIZE = 10;
 
+        Position pointer_position;
+
         bool is_decorated = true;
+
+        
 };
 
 struct SurfaceUserData

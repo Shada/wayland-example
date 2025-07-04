@@ -33,7 +33,12 @@ public:
     void unset_pointer_active_window() { pointer_active_window = nullptr; }
 
     void on_key(uint32_t key, uint32_t state);
+    void on_pointer_leave() 
+    { // do things like unset cursor, etc.
+        pointer_active_window = nullptr;
+    };
     void on_pointer_button(uint32_t button, uint32_t state);
+    void on_pointer_motion(int32_t x, int32_t y);
 
 private:
 

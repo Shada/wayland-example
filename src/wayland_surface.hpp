@@ -9,7 +9,7 @@ namespace tobi_engine
     class WaylandSurface
     {
     public:
-        enum class Type { Decoration, Content, Popup, Overlay };
+        enum class Type { Decoration, Content, Popup, Overlay, Cursor };
 
         WaylandSurface(uint32_t width, uint32_t height, const WaylandSurface *parent = nullptr);
         WaylandSurface(WaylandSurface &&) = default;
@@ -64,6 +64,16 @@ namespace tobi_engine
     public:
         ContentSurface(uint32_t width, uint32_t height, const WaylandSurface *parent = nullptr);
         Type get_type() const override { return Type::Content; }
+        // Decoration-specific members...
+
+    private:
+        
+    };
+    class CursorSurface : public WaylandSurface 
+    {
+    public:
+        CursorSurface(uint32_t width, uint32_t height, const WaylandSurface *parent = nullptr);
+        Type get_type() const override { return Type::Cursor; }
         // Decoration-specific members...
 
     private:

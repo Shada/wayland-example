@@ -1,12 +1,19 @@
 #include "wayland_deleters.hpp"
 
 #include <wayland-client-protocol.h>
+#include <wayland-cursor.h>
 #include <xkbcommon/xkbcommon.h>
 #include "wayland-xdg-shell-client-protocol.h"
 #include "wayland_window.hpp"
 
 namespace tobi_engine
 {
+
+    void WlCursorThemeDeleter::operator()(wl_cursor_theme* ptr) const
+    {
+        if (ptr) wl_cursor_theme_destroy(ptr);
+    }
+
     void KbStateDeleter::operator()(xkb_state* ptr) const 
     {
         if (ptr) xkb_state_unref(ptr);

@@ -2,6 +2,7 @@
 
 #include <memory>
 
+#include "wayland_cursor.hpp"
 #include "wayland_deleters.hpp"
 
 namespace tobi_engine
@@ -38,6 +39,14 @@ class WaylandClient
         void update();
         void clear();
 
+        void update_cursor(const std::string& cursor_name)
+        {
+            if(cursor)
+            {
+                cursor->set_cursor(cursor_name);
+            }
+        }
+
     private:
 
         static std::shared_ptr<WaylandClient> instance;
@@ -45,6 +54,8 @@ class WaylandClient
         WaylandClient();
 
         void initialize();
+
+        std::unique_ptr<WaylandCursor> cursor;
 
         DisplayPtr display;
         RegistryPtr registry;

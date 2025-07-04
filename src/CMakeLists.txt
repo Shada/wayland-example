@@ -7,6 +7,7 @@ add_library(wayland_window STATIC
     wayland_surface_buffer.cpp
     wayland_surface.cpp
     wayland_deleters.cpp
+    wayland_cursor.cpp
     window.cpp
     utils/logger.cpp
     utils/utils.cpp

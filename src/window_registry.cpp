@@ -36,5 +36,10 @@ namespace tobi_engine
         if(pointer_active_window)
             pointer_active_window->on_pointer_button(button, state);
     }
+    void WindowRegistry::on_pointer_motion(int32_t x, int32_t y)
+    {
+        if(pointer_active_window)
+            pointer_active_window->on_pointer_motion(x, y);
+    }
 
 }

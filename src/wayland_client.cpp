@@ -1,7 +1,9 @@
 #include "wayland_client.hpp"
 
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 #include <functional>
 #include <memory>
 #include <stdexcept>
@@ -10,6 +12,7 @@
 #include <unordered_map>
 #include <wayland-client.h>
 #include <wayland-client-protocol.h>
+#include <wayland-cursor.h>
 #include <wayland-util.h>
 #include "wayland-xdg-shell-client-protocol.h"
 #include "wayland-xdg-decoration-unstable-v1-client-protocol.h"
@@ -189,6 +192,7 @@ namespace tobi_engine
     {
         wl_display_flush(display.get());
         wl_display_roundtrip(display.get());
+        
     }
 
     void WaylandClient::update()
@@ -203,6 +207,7 @@ namespace tobi_engine
 
     void WaylandClient::initialize()
     {
+        LOG_DEBUG("initilizing Wayland Client");
         display = DisplayPtr(wl_display_connect(nullptr));
         if(!display)
             throw std::runtime_error("Failed to create Wayland Display!");
@@ -217,6 +222,8 @@ namespace tobi_engine
         wl_display_roundtrip(display.get());
 
         kb_context = KbContextPtr(xkb_context_new(XKB_CONTEXT_NO_FLAGS));
+
+        cursor = std::make_unique<WaylandCursor>(this);
     }
     
 }

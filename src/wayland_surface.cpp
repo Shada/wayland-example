@@ -68,11 +68,16 @@ namespace tobi_engine
     void DecorationSurface::resize(uint32_t width, uint32_t height)
     {
         WaylandSurface::resize(width + DECORATIONS_BORDER_SIZE * 2, height + DECORATIONS_TOPBAR_SIZE + DECORATIONS_BORDER_SIZE);
-   }
+    }
     ContentSurface::ContentSurface(uint32_t width, uint32_t height, const WaylandSurface *parent)
         :   WaylandSurface(width, height, parent)
     {
         this->clear_colour = 0xFFFFFFFF;
+    }
+    CursorSurface::CursorSurface(uint32_t width, uint32_t height, const WaylandSurface *parent)
+        :   WaylandSurface(width, height, parent)
+    {
+        this->clear_colour = 0xFFFF0000;
     }
 
 }

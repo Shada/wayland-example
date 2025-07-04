@@ -22,7 +22,7 @@ struct xdg_surface;
 struct xdg_toplevel;
 struct wl_buffer;
 
-struct wl_proxy;
+struct wl_cursor_theme;
 
 namespace tobi_engine
 {
@@ -46,6 +46,7 @@ namespace tobi_engine
     struct WlBufferDeleter { void operator()(wl_buffer* ptr) const; };
     struct XdgSurfaceDeleter { void operator()(xdg_surface* ptr) const; };
     struct XdgToplevelDeleter { void operator()(xdg_toplevel* ptr) const; };
+    struct WlCursorThemeDeleter { void operator()(wl_cursor_theme* ptr) const; };
 
     using KbStatePtr = std::unique_ptr<xkb_state, KbStateDeleter>;
     using KbKeymapPtr = std::unique_ptr<xkb_keymap, KbKeymapDeleter>;
@@ -66,6 +67,7 @@ namespace tobi_engine
     using BufferPtr = std::unique_ptr<wl_buffer, WlBufferDeleter>;
     using XdgSurfacePtr = std::unique_ptr<xdg_surface, XdgSurfaceDeleter>;
     using XdgToplevelPtr = std::unique_ptr<xdg_toplevel, XdgToplevelDeleter>;
+    using CursorThemePtr = std::unique_ptr<wl_cursor_theme, WlCursorThemeDeleter>;
 
 
 }

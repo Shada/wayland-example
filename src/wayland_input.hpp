@@ -102,20 +102,56 @@ namespace tobi_engine
 
         auto window_registry = WindowRegistry::get_instance();
         auto surface_data =static_cast<SurfaceUserData*>(wl_surface_get_user_data(surface));
+        if (!surface_data)
+            return;
+        auto window = surface_data->window;
+        if (!window)
+            return;
+        window_registry->set_pointer_active_window(window->get_uid());
+        
+        window->pointer_event.pointer = pointer;
+        window->pointer_event.serial = serial;
+        window->pointer_event.position.x = wl_fixed_to_int(x);
+        window->pointer_event.position.y = wl_fixed_to_int(y);
+        window->pointer_event.button = 0; // No button pressed
+        window->pointer_event.state = 0; // No button pressed
 
-        window_registry->set_pointer_active_window(surface_data->window->get_uid());
+        window->on_pointer_motion(wl_fixed_to_int(x), wl_fixed_to_int(y));
 
     }
+
     void pointer_leave(void *data, wl_pointer* poiner, uint32_t serial, wl_surface *surface)
     {
         LOG_DEBUG("pointer_leave()");
         auto window_registry = WindowRegistry::get_instance();
 
         window_registry->unset_pointer_active_window();
+
+        if (!surface)
+            return;
+        auto surface_data = static_cast<SurfaceUserData*>(wl_surface_get_user_data(surface));
+        if (!surface_data)
+            return;
+        auto window = surface_data->window;
+        if (!window)
+            return;
+        window->pointer_event.pointer = nullptr;
+        window->pointer_event.serial = serial;
+        window->pointer_event.position.x = 0;
+        window->pointer_event.position.y = 0;
+        window->pointer_event.button = 0; // No button pressed
+        window->pointer_event.state = 0; // No button pressed
+
     }
 
     void pointer_motion(void *data, wl_pointer* pointer, uint32_t time, wl_fixed_t x, wl_fixed_t y)
     {
+        auto window_registry = WindowRegistry::get_instance();
+
+        window_registry->on_pointer_motion(wl_fixed_to_int(x), wl_fixed_to_int(y));
+
+        
+
         //LOG_DEBUG("pointer_motion()");
     }
 
