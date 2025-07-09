@@ -1,6 +1,6 @@
 #pragma once
 
-#include "wayland_deleters.hpp"
+#include "wayland_types.hpp"
 #include "wayland_surface_buffer.hpp"
 #include <cstdint>
 namespace tobi_engine

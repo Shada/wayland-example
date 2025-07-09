@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "wayland_cursor.hpp"
-#include "wayland_deleters.hpp"
+#include "wayland_types.hpp"
 #include "wayland_surface.hpp"
 #include "wayland_surface_buffer.hpp"
 #include "window.hpp"
@@ -55,6 +55,14 @@ class WaylandWindow : public Window
 
         void draw();
 
+        void update_cursor(const std::string& cursor_name)
+        {
+            if(cursor)
+            {
+                cursor->set_cursor(cursor_name);
+            }
+        }
+
         // public static for now.
         static PointerEvent pointer_event;
 
@@ -67,6 +75,7 @@ class WaylandWindow : public Window
         void create_buffer();
 
         std::shared_ptr<WaylandClient> client;
+        std::shared_ptr<WaylandCursor> cursor;
 
         std::vector<WaylandSurfacePtr> surfaces;
 

@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "wayland_deleters.hpp"
+#include "wayland_types.hpp"
 
 namespace tobi_engine
 {

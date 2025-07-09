@@ -6,10 +6,13 @@
 #include <cstdlib>
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <stdexcept>
+#include <format>
 
 #include <string>
 #include <unordered_map>
+#include <wayland-client-core.h>
 #include <wayland-client.h>
 #include <wayland-client-protocol.h>
 #include <wayland-cursor.h>
@@ -19,7 +22,7 @@
 #include <xkbcommon/xkbcommon.h>
 
 #include "utils/logger.hpp"
-#include "wayland_deleters.hpp"
+#include "wayland_types.hpp"
 #include "window_registry.hpp"
 #include "wayland_window.hpp"
 #include "wayland_input.hpp"
@@ -30,7 +33,7 @@ namespace tobi_engine
 {
     void* bind_to_registry(wl_registry *registry, uint32_t name, const wl_interface* interface, uint32_t client_version, uint32_t server_version);
 
-    static const std::unordered_map<std::string, std::function<void(wl_registry*, uint32_t, uint32_t, WaylandClient*)>> registry_handlers = 
+    static const std::unordered_map<std::string_view, std::function<void(wl_registry*, uint32_t, uint32_t, WaylandClient*)>> registry_handlers = 
     {
         { wl_compositor_interface.name, [](wl_registry* r, uint32_t n, uint32_t v, WaylandClient* client) 
         {
@@ -59,7 +62,7 @@ namespace tobi_engine
         xdg_wm_base_pong(shell, serial);
     }
 
-    const struct xdg_wm_base_listener shell_listener = 
+    static constexpr xdg_wm_base_listener shell_listener = 
     {
         shell_ping
     };
@@ -78,19 +81,19 @@ namespace tobi_engine
         }
         else if(!is_keyboard_supported && client->is_keyboard_available()) 
         {
-            client->set_keyboard(nullptr);
+            client->unset_keyboard();
         }
 
         bool is_pointer_supported = capabilities & WL_SEAT_CAPABILITY_POINTER;
         if(is_pointer_supported && !client->get_pointer())
         {
-            auto pointer = wl_seat_get_pointer(seat);
-            wl_pointer_add_listener(pointer, &pointer_listener, client);
-            client->set_pointer(pointer);
+            auto pointer = PointerPtr(wl_seat_get_pointer(seat));
+            wl_pointer_add_listener(pointer.get(), &pointer_listener, client);
+            client->set_pointer(std::move(pointer));
         }
         else if(!is_pointer_supported && client->get_pointer())
         {
-            client->set_pointer(nullptr);
+            client->unset_pointer();
         }
     }
 
@@ -99,7 +102,7 @@ namespace tobi_engine
         LOG_DEBUG("seat_name()");
     }
 
-    const struct wl_seat_listener seat_listener = 
+    static constexpr wl_seat_listener seat_listener = 
     {
         .capabilities = seat_capabilities,
         .name = seat_name
@@ -113,12 +116,13 @@ namespace tobi_engine
         
         if (bind_version < client_version) 
         {
-            throw std::runtime_error(std::format("Client supports {} version {}, but server only supports up to version {}.", 
-                interface->name, client_version, server_version));
+            LOG_ERROR("Client supports {} version {}, but server only supports up to version {}.", 
+                interface->name, client_version, server_version);
+            return nullptr;
         }
         else if(bind_version < server_version)
         {
-            LOG_DEBUG("Server supports {} version {}, but client only supports up to ",
+            LOG_DEBUG("Server supports {} version {}, but client only supports up to {}",
                 interface->name, server_version, client_version);
         }
 
@@ -127,12 +131,22 @@ namespace tobi_engine
     
     void WaylandClient::set_seat(wl_seat* seat)
     {
+        if(!seat)
+        {
+            LOG_ERROR("Failed to set seat: seat is null");
+            return;
+        }
         wl_seat_add_listener(seat, &seat_listener, this);
         this->seat = SeatPtr(seat);
     }
 
     void WaylandClient::set_shell(xdg_wm_base* shell)
     {
+        if(!shell)
+        {
+            LOG_ERROR("Failed to set shell: shell is null");
+            return;
+        }
         xdg_wm_base_add_listener(shell, &shell_listener, this);
         this->shell = XdgShellPtr(shell); 
     }
@@ -160,8 +174,10 @@ namespace tobi_engine
 
     std::shared_ptr<WaylandClient> WaylandClient::instance = nullptr;
 
+    std::mutex instance_mutex;
     std::shared_ptr<WaylandClient> WaylandClient::get_instance()
     {
+        std::lock_guard<std::mutex> lock(instance_mutex);
         if(!instance)
             instance = std::shared_ptr<WaylandClient>(new WaylandClient());
         return instance;
@@ -188,16 +204,18 @@ namespace tobi_engine
         initialize();
     }
 
-    void WaylandClient::flush()
+    bool WaylandClient::flush()
     {
-        wl_display_flush(display.get());
+        auto ret = wl_display_flush(display.get());
         wl_display_roundtrip(display.get());
         
+        return ret != -1;
     }
 
-    void WaylandClient::update()
+    bool WaylandClient::update()
     {
-        wl_display_dispatch(display.get());
+        auto ret = wl_display_dispatch(display.get());
+        return ret != -1;
     }
     void WaylandClient::clear()
     {
@@ -223,7 +241,6 @@ namespace tobi_engine
 
         kb_context = KbContextPtr(xkb_context_new(XKB_CONTEXT_NO_FLAGS));
 
-        cursor = std::make_unique<WaylandCursor>(this);
     }
     
 }

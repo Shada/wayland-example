@@ -46,27 +46,27 @@ namespace tobi_engine
     void keyboard_enter(void *data, struct wl_keyboard* keyboard, uint32_t serial, struct wl_surface *surface, struct wl_array* keys) 
     {
         LOG_DEBUG("keyboard_enter()");
-        auto window_registry = WindowRegistry::get_instance();
+        auto& window_registry = WindowRegistry::get_instance();
         auto surface_data = static_cast<SurfaceUserData*>(wl_surface_get_user_data(surface));
         
-        window_registry->set_active_window(surface_data->window->get_uid());
+        window_registry.set_active_window(surface_data->window->get_uid());
 
     }
 
     void keyboard_leave(void *data, struct wl_keyboard* keyboard, uint32_t serial, struct wl_surface *surface) 
     {
         LOG_DEBUG("keyboard_leave()");
-        auto window_registry = WindowRegistry::get_instance();
-        window_registry->unset_active_window();
+        auto& window_registry = WindowRegistry::get_instance();
+        window_registry.unset_active_window();
     }
 
     void keyboard_key(void *data, struct wl_keyboard* keyboard, uint32_t serial, uint32_t time, uint32_t key, uint32_t state) 
     {
-        auto window_registry = WindowRegistry::get_instance();
+        auto& window_registry = WindowRegistry::get_instance();
         LOG_DEBUG("keyboard_key() = {}", key);
         uint32_t keycode = key + 8;
 
-        window_registry->on_key(keycode, state);
+        window_registry.on_key(keycode, state);
     }
 
     void keyboard_modifiers(void *data, struct wl_keyboard* keyboard, uint32_t serial, uint32_t depressed, uint32_t latched, uint32_t locked, uint32_t group) 
@@ -100,14 +100,14 @@ namespace tobi_engine
         if (!surface)
             return;
 
-        auto window_registry = WindowRegistry::get_instance();
+        auto& window_registry = WindowRegistry::get_instance();
         auto surface_data =static_cast<SurfaceUserData*>(wl_surface_get_user_data(surface));
         if (!surface_data)
             return;
         auto window = surface_data->window;
         if (!window)
             return;
-        window_registry->set_pointer_active_window(window->get_uid());
+        window_registry.set_pointer_active_window(window->get_uid());
         
         window->pointer_event.pointer = pointer;
         window->pointer_event.serial = serial;
@@ -116,6 +116,8 @@ namespace tobi_engine
         window->pointer_event.button = 0; // No button pressed
         window->pointer_event.state = 0; // No button pressed
 
+        window->update_cursor("nw-resize"); // Set default cursor for pointer enter
+
         window->on_pointer_motion(wl_fixed_to_int(x), wl_fixed_to_int(y));
 
     }
@@ -123,9 +125,9 @@ namespace tobi_engine
     void pointer_leave(void *data, wl_pointer* poiner, uint32_t serial, wl_surface *surface)
     {
         LOG_DEBUG("pointer_leave()");
-        auto window_registry = WindowRegistry::get_instance();
+        auto& window_registry = WindowRegistry::get_instance();
 
-        window_registry->unset_pointer_active_window();
+        window_registry.unset_pointer_active_window();
 
         if (!surface)
             return;
@@ -142,24 +144,22 @@ namespace tobi_engine
         window->pointer_event.button = 0; // No button pressed
         window->pointer_event.state = 0; // No button pressed
 
+        window->update_cursor("none"); // Set default cursor for pointer enter
+
     }
 
     void pointer_motion(void *data, wl_pointer* pointer, uint32_t time, wl_fixed_t x, wl_fixed_t y)
     {
-        auto window_registry = WindowRegistry::get_instance();
+        auto& window_registry = WindowRegistry::get_instance();
 
-        window_registry->on_pointer_motion(wl_fixed_to_int(x), wl_fixed_to_int(y));
-
-        
-
-        //LOG_DEBUG("pointer_motion()");
+        window_registry.on_pointer_motion(wl_fixed_to_int(x), wl_fixed_to_int(y));
     }
 
     void pointer_button(void *data, wl_pointer* poiner, uint32_t serial, uint32_t time, uint32_t button, uint32_t state)
     {
         LOG_DEBUG("pointer_button()");
-        auto window_registry = WindowRegistry::get_instance();
-        window_registry->on_pointer_button(button, state);
+        auto& window_registry = WindowRegistry::get_instance();
+        window_registry.on_pointer_button(button, state);
     }
 
     void pointer_axis(void* data, wl_pointer* pointer, uint32_t time, uint32_t axis, wl_fixed_t value)

@@ -1,4 +1,4 @@
-#include "wayland_deleters.hpp"
+#include "wayland_types.hpp"
 
 #include <wayland-client-protocol.h>
 #include <wayland-cursor.h>

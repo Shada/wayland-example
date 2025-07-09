@@ -1,7 +1,7 @@
 #include "wayland_surface.hpp"
 #include "utils/logger.hpp"
 #include "wayland_client.hpp"
-#include "wayland_deleters.hpp"
+#include "wayland_types.hpp"
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -12,6 +12,7 @@ namespace tobi_engine
 {
 
     WaylandSurface::WaylandSurface(uint32_t width, uint32_t height, const WaylandSurface *parent)
+        : width(width), height(height)
     {
         auto client = WaylandClient::get_instance();
 

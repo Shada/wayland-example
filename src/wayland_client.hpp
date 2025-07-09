@@ -2,8 +2,7 @@
 
 #include <memory>
 
-#include "wayland_cursor.hpp"
-#include "wayland_deleters.hpp"
+#include "wayland_types.hpp"
 
 namespace tobi_engine
 {
@@ -31,21 +30,16 @@ class WaylandClient
         void set_shm(wl_shm* shm) { this->shm = ShmPtr(shm); }
         void set_seat(wl_seat* seat);
         void set_keyboard(wl_keyboard* keyboard) { this->keyboard = KeyboardPtr(keyboard); }
-        void set_pointer(wl_pointer* pointer) { this->pointer = PointerPtr(pointer); }
+        void unset_keyboard() { this->keyboard.reset(); }
+        void set_pointer(PointerPtr pointer) { this->pointer = std::move(pointer); }
+        void unset_pointer() { this->pointer.reset(); }
         void set_keymap(xkb_keymap* keymap) { this->kb_keymap = KbKeymapPtr(keymap); }
         void set_kb_state(xkb_state* state) { this->kb_state = KbStatePtr(state); }
 
-        void flush();
-        void update();
+        
+        bool flush();
+        bool update();
         void clear();
-
-        void update_cursor(const std::string& cursor_name)
-        {
-            if(cursor)
-            {
-                cursor->set_cursor(cursor_name);
-            }
-        }
 
     private:
 
@@ -55,7 +49,6 @@ class WaylandClient
 
         void initialize();
 
-        std::unique_ptr<WaylandCursor> cursor;
 
         DisplayPtr display;
         RegistryPtr registry;

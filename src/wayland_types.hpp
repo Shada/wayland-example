@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <wayland-client-core.h>
 
 struct xkb_state;
 struct xkb_keymap;
@@ -21,12 +22,24 @@ struct wl_callback;
 struct xdg_surface;
 struct xdg_toplevel;
 struct wl_buffer;
+struct wl_proxy;
+struct wl_cursor;
 
 struct wl_cursor_theme;
 
 namespace tobi_engine
 {
-    
+
+    struct WlDestroyer 
+    { 
+        template<typename T> 
+        void operator()(T* ptr) const
+        {
+            if (!ptr) 
+                wl_proxy_destroy((struct wl_proxy*)ptr);
+        }
+    };
+
     struct KbStateDeleter { void operator()(xkb_state* ptr) const; };
     struct KbKeymapDeleter { void operator()(xkb_keymap* ptr) const; };
     struct KbContextDeleter { void operator()(xkb_context* ptr) const; };
@@ -69,5 +82,15 @@ namespace tobi_engine
     using XdgToplevelPtr = std::unique_ptr<xdg_toplevel, XdgToplevelDeleter>;
     using CursorThemePtr = std::unique_ptr<wl_cursor_theme, WlCursorThemeDeleter>;
 
-
+    template<typename T>
+    inline std::shared_ptr<T> make_shared(T* raw_ptr) 
+    {
+        return std::shared_ptr<T>(raw_ptr, WlDestroyer());
+    }
+    template<typename T>
+    inline std::unique_ptr<T, WlDestroyer> make_unique(T* raw_ptr)
+    {
+        return std::unique_ptr<T, WlDestroyer>(raw_ptr, WlDestroyer());
+    }
+    
 }

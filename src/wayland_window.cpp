@@ -16,7 +16,7 @@
 #include "wayland-xdg-shell-client-protocol.h"
 
 #include "wayland_client.hpp"
-#include "wayland_deleters.hpp"
+#include "wayland_types.hpp"
 #include "wayland_surface.hpp"
 #include "utils/logger.hpp"
 #include "utils/utils.hpp"
@@ -181,6 +181,9 @@ void WaylandWindow::initialize()
     xdg_toplevel_set_app_id(x_toplevel.get(), title.c_str());
     xdg_toplevel_add_listener(x_toplevel.get(), &toplevel_listener, this);
     
+
+    cursor = std::make_shared<WaylandCursor>(client);
+
     draw();
 }
 
@@ -251,8 +254,6 @@ void WaylandWindow::on_pointer_motion(int32_t x, int32_t y)
     
     pointer_position.x = x;
     pointer_position.y = y;
-
-    WaylandClient::get_instance()->update_cursor("nw-resize");
 }
 
 void WaylandWindow::resize(uint32_t width, uint32_t height)
