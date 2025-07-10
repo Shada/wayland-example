@@ -117,7 +117,6 @@ PointerEvent WaylandWindow::pointer_event = {};
 
 WaylandWindow::WaylandWindow(const WindowProperties &properties)
     :   Window(properties),
-        client(WaylandClient::get_instance()),
         title(properties.title)
 {
     initialize();
@@ -137,8 +136,8 @@ void WaylandWindow::update_decoration_mode(bool enable)
     // Destroy surfaces and buffers
     surfaces.clear();
 
-    client->flush();
-    client->clear();
+    WaylandClient::get_instance().flush();
+    WaylandClient::get_instance().clear();
 
     // Re-initialize with the new decoration state
     initialize();
@@ -146,6 +145,8 @@ void WaylandWindow::update_decoration_mode(bool enable)
 
 void WaylandWindow::initialize()
 {
+    auto & client = WaylandClient::get_instance();
+    cursor = std::make_unique<WaylandCursor>();
     if(is_decorated)
     {
         surfaces.push_back(std::make_unique<DecorationSurface>(this->properties.width, this->properties.height));
@@ -154,7 +155,7 @@ void WaylandWindow::initialize()
         set_callback(wl_surface_frame(surfaces[0]->get_surface()));
         wl_callback_add_listener(callback.get(), &surface_ready_callback_listener, this);
 
-        x_surface.reset(xdg_wm_base_get_xdg_surface(client->get_shell(), surfaces[0]->get_surface()));
+        x_surface.reset(xdg_wm_base_get_xdg_surface(client.get_shell(), surfaces[0]->get_surface()));
         xdg_surface_add_listener(x_surface.get(), &xdg_surface_listener, this);
 
         wl_surface_set_user_data(surfaces[0]->get_surface(), this);
@@ -167,7 +168,7 @@ void WaylandWindow::initialize()
         set_callback(wl_surface_frame(surfaces.back()->get_surface()));
         wl_callback_add_listener(callback.get(), &surface_ready_callback_listener, this);
 
-        x_surface.reset(xdg_wm_base_get_xdg_surface(client->get_shell(), surfaces.back()->get_surface()));
+        x_surface.reset(xdg_wm_base_get_xdg_surface(client.get_shell(), surfaces.back()->get_surface()));
         xdg_surface_add_listener(x_surface.get(), &xdg_surface_listener, this);
 
         wl_surface_set_user_data(surfaces.back()->get_surface(), this);
@@ -181,15 +182,12 @@ void WaylandWindow::initialize()
     xdg_toplevel_set_app_id(x_toplevel.get(), title.c_str());
     xdg_toplevel_add_listener(x_toplevel.get(), &toplevel_listener, this);
     
-
-    cursor = std::make_shared<WaylandCursor>(client);
-
     draw();
 }
 
 void WaylandWindow::update()
 {
-    client->update();
+    WaylandClient::get_instance().update();
 
     for (auto& action : pending_actions)
         action();
@@ -199,15 +197,16 @@ void WaylandWindow::update()
 
 void WaylandWindow::on_key(uint32_t key, uint32_t state)
 {
+    auto & client = WaylandClient::get_instance();
     char buf[128];
-    xkb_keysym_t sym = xkb_state_key_get_one_sym(client->get_state(), key);
+    xkb_keysym_t sym = xkb_state_key_get_one_sym(client.get_state(), key);
     xkb_keysym_get_name(sym, buf, sizeof(buf));
 
     const char *action =
             state == WL_KEYBOARD_KEY_STATE_PRESSED ? "press" : "release";
     LOG_DEBUG("key {}: sym: {} ({})", action, buf, sym);
 
-    xkb_state_key_get_utf8(client->get_state(), key,
+    xkb_state_key_get_utf8(client.get_state(), key,
                         buf, sizeof(buf));
     if(buf[0] > 32)
     {

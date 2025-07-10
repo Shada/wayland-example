@@ -14,12 +14,12 @@ namespace tobi_engine
     WaylandSurface::WaylandSurface(uint32_t width, uint32_t height, const WaylandSurface *parent)
         : width(width), height(height)
     {
-        auto client = WaylandClient::get_instance();
+        auto &client = WaylandClient::get_instance();
 
         LOG_DEBUG("Width: {}, heigth: {}", width, height);
 
         buffer = std::make_unique<SurfaceBuffer>(width, height);
-        surface = WlSurfacePtr(wl_compositor_create_surface(client->get_compositor()));
+        surface = WlSurfacePtr(wl_compositor_create_surface(client.get_compositor()));
         create_subsurface(parent);
 
         wl_surface_attach(surface.get(), buffer->get_buffer(), 0, 0);
@@ -30,9 +30,9 @@ namespace tobi_engine
     {
         if(!parent)
             return;
-        auto client = WaylandClient::get_instance();
+        auto &client = WaylandClient::get_instance();
 
-        subsurface = WlSubSurfacePtr(wl_subcompositor_get_subsurface(client->get_subcompositor(), surface.get(), parent->get_surface()));
+        subsurface = WlSubSurfacePtr(wl_subcompositor_get_subsurface(client.get_subcompositor(), surface.get(), parent->get_surface()));
         wl_subsurface_set_desync(subsurface.get());
         wl_subsurface_set_position(subsurface.get(), DECORATIONS_BORDER_SIZE, DECORATIONS_TOPBAR_SIZE);
     }

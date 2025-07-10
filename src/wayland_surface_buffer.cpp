@@ -105,8 +105,8 @@ namespace tobi_engine
 
     void SurfaceBuffer::create_buffer()
     {
-        auto client = WaylandClient::get_instance();
-        wl_shm_pool* pool = wl_shm_create_pool(client->get_shm(), file_descriptor, size);
+        auto &client = WaylandClient::get_instance();
+        wl_shm_pool* pool = wl_shm_create_pool(client.get_shm(), file_descriptor, size);
         if (!pool)
             throw std::runtime_error("Failed to create Wayland SHM pool.");
 

@@ -20,6 +20,7 @@ public:
     WindowRegistry& operator=(const WindowRegistry&) = delete;
 
     std::shared_ptr<Window> create_window(WindowProperties properties);
+
     void set_active_window(uint64_t uid) 
     {
         if(windows.contains(uid)) 
@@ -40,7 +41,7 @@ public:
 
 private:
 
-    WindowRegistry() = default;
+    WindowRegistry();
     
     std::unordered_map<uint64_t, std::shared_ptr<Window>> windows;
     std::weak_ptr<Window> keyboard_active_window;

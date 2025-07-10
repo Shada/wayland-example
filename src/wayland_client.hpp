@@ -1,20 +1,22 @@
 #pragma once
 
-#include <memory>
-
 #include "wayland_types.hpp"
 
 namespace tobi_engine
 {
-class WaylandWindow;
 
 class WaylandClient
 {
     public:
-        static std::shared_ptr<WaylandClient> get_instance();
-        
-        ~WaylandClient();
 
+        static WaylandClient& get_instance()
+        {
+            static WaylandClient instance;
+            return instance;
+        }
+        
+        ~WaylandClient() = default;
+        
         wl_compositor* get_compositor() const { return compositor.get(); }
         wl_subcompositor* get_subcompositor() const { return subcompositor.get(); }
         xdg_wm_base* get_shell() const { return shell.get(); }
@@ -31,7 +33,7 @@ class WaylandClient
         void set_seat(wl_seat* seat);
         void set_keyboard(wl_keyboard* keyboard) { this->keyboard = WlKeyboardPtr(keyboard); }
         void unset_keyboard() { this->keyboard.reset(); }
-        void set_pointer(WlPointerPtr pointer) { this->pointer = std::move(pointer); }
+        void set_pointer(wl_pointer* pointer) { this->pointer = WlPointerPtr(pointer); }
         void unset_pointer() { this->pointer.reset(); }
         void set_keymap(xkb_keymap* keymap) { this->kb_keymap = XkbKeymapPtr(keymap); }
         void set_kb_state(xkb_state* state) { this->kb_state = XkbStatePtr(state); }
@@ -42,13 +44,47 @@ class WaylandClient
         void clear();
 
     private:
+        static void registry_global_add(void *data, 
+                                        wl_registry *registry, 
+                                        uint32_t name, 
+                                        const char *interface, 
+                                        uint32_t version);
+        static void registry_global_remove( void *data, 
+                                            wl_registry *registry, 
+                                            uint32_t name);
+        
+        static void seat_capabilities(void* data, struct wl_seat* seat, uint32_t capabilities);
+        static void seat_name(void* data, struct wl_seat* seat, const char* name);
+        static void shell_ping(void *data, xdg_wm_base *shell, uint32_t serial);
+        
+        static constexpr wl_seat_listener seat_listener
+        {
+            &WaylandClient::seat_capabilities,
+            &WaylandClient::seat_name
+        };
+        static constexpr xdg_wm_base_listener shell_listener
+        {
+            &WaylandClient::shell_ping
+        };
+                                          
+        static inline const wl_registry_listener registry_listener
+        {
+            &WaylandClient::registry_global_add,
+            &WaylandClient::registry_global_remove
+        };
 
-        static std::shared_ptr<WaylandClient> instance;
+        void on_registry_global_add(wl_registry *registry, 
+                                    uint32_t name, 
+                                    const char *interface, 
+                                    uint32_t version);
+        void on_registry_global_remove(wl_registry *registry, uint32_t name);
+        void on_shell_ping(xdg_wm_base *shell, uint32_t serial);
+        void on_seat_capabilities(wl_seat *seat, uint32_t capabilities);
+        void on_seat_name(wl_seat *seat, const char *name); 
 
         WaylandClient();
 
         void initialize();
-
 
         WlDisplayPtr display;
         WlRegistryPtr registry;

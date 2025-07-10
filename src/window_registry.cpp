@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <memory>
 
+#include "wayland_client.hpp"
 #include "wayland_window.hpp"
 
 namespace tobi_engine
@@ -20,6 +21,12 @@ namespace tobi_engine
         windows[window->get_uid()] = window;
         
         return window;
+    }
+
+    WindowRegistry::WindowRegistry()
+    {
+        // Initialize the Wayland client
+        WaylandClient::get_instance();
     }
 
     void WindowRegistry::on_key(uint32_t key, uint32_t state)

@@ -31,8 +31,26 @@ struct wl_interface;
 
 namespace tobi_engine
 {
-    void* bind_to_registry(wl_registry *registry, uint32_t name, const wl_interface* interface, uint32_t client_version, uint32_t server_version);
+    void* bind_to_registry(wl_registry *registry, uint32_t name, const wl_interface* interface, uint32_t client_version, uint32_t server_version)
+    {
+        LOG_DEBUG("Adding {} to registry", interface->name);
 
+        const uint32_t bind_version = std::min(server_version, client_version);
+        
+        if (bind_version < client_version) 
+        {
+            LOG_ERROR("Client supports {} version {}, but server only supports up to version {}.", 
+                interface->name, client_version, server_version);
+            return nullptr;
+        }
+        else if(bind_version < server_version)
+        {
+            LOG_DEBUG("Server supports {} version {}, but client only supports up to {}",
+                interface->name, server_version, client_version);
+        }
+
+        return wl_registry_bind(registry, name, interface, bind_version);
+    }
     static const std::unordered_map<std::string_view, std::function<void(wl_registry*, uint32_t, uint32_t, WaylandClient*)>> registry_handlers = 
     {
         { wl_compositor_interface.name, [](wl_registry* r, uint32_t n, uint32_t v, WaylandClient* client) 
@@ -57,77 +75,81 @@ namespace tobi_engine
         }},
     };
 
-    void shell_ping(void *data, xdg_wm_base *shell, uint32_t serial) 
+    void WaylandClient::shell_ping(void *data, xdg_wm_base *shell, uint32_t serial) 
+    {
+        auto client = static_cast<WaylandClient*>(data);
+        client->on_shell_ping(shell, serial);
+    }
+
+    void WaylandClient::on_shell_ping(xdg_wm_base *shell, uint32_t serial) 
     {
         xdg_wm_base_pong(shell, serial);
     }
 
-    static constexpr xdg_wm_base_listener shell_listener = 
-    {
-        shell_ping
-    };
-
-    static void seat_capabilities(void* data, struct wl_seat* seat, uint32_t capabilities) 
+    void WaylandClient::seat_capabilities(void* data, struct wl_seat* seat, uint32_t capabilities) 
     {
         LOG_DEBUG("seat_capabilities() = {}", capabilities);
         auto client = static_cast<WaylandClient*>(data);
+        client->on_seat_capabilities(seat, capabilities);
+    }
 
-        bool is_keyboard_supported = capabilities & WL_SEAT_CAPABILITY_KEYBOARD;
-        if(is_keyboard_supported && !client->is_keyboard_available()) 
+    void WaylandClient::on_seat_capabilities(struct wl_seat* seat, uint32_t capabilities)
+    {
+        if (capabilities & WL_SEAT_CAPABILITY_POINTER) 
         {
-            auto keyboard = wl_seat_get_keyboard(seat);
-            wl_keyboard_add_listener(keyboard, &keyboard_listener, client);
-            client->set_keyboard(keyboard);
-        }
-        else if(!is_keyboard_supported && client->is_keyboard_available()) 
+            if (!pointer) 
+            {
+                pointer = WlPointerPtr(wl_seat_get_pointer(seat));
+                wl_pointer_add_listener(pointer.get(), &pointer_listener, this);
+                LOG_DEBUG("Pointer device added");
+            }
+        } 
+        else 
         {
-            client->unset_keyboard();
+            pointer.reset();
+            LOG_DEBUG("Pointer device removed");
         }
 
-        bool is_pointer_supported = capabilities & WL_SEAT_CAPABILITY_POINTER;
-        if(is_pointer_supported && !client->get_pointer())
+        if (capabilities & WL_SEAT_CAPABILITY_KEYBOARD) 
         {
-            auto pointer = WlPointerPtr(wl_seat_get_pointer(seat));
-            wl_pointer_add_listener(pointer.get(), &pointer_listener, client);
-            client->set_pointer(std::move(pointer));
+            if (!keyboard) 
+            {
+                keyboard = WlKeyboardPtr(wl_seat_get_keyboard(seat));
+                wl_keyboard_add_listener(keyboard.get(), &keyboard_listener, this);
+                LOG_DEBUG("Keyboard device added");
+            }
+        } 
+        else 
+        {
+            keyboard.reset();
+            LOG_DEBUG("Keyboard device removed");
         }
-        else if(!is_pointer_supported && client->get_pointer())
+
+        if (capabilities & WL_SEAT_CAPABILITY_TOUCH) 
         {
-            client->unset_pointer();
+            // Touch support can be implemented here
+            LOG_DEBUG("Touch device support is not implemented yet");
         }
     }
 
-    static void seat_name(void* data, struct wl_seat* seat, const char* name) 
+    void WaylandClient::seat_name(void* data, struct wl_seat* seat, const char* name) 
     {
         LOG_DEBUG("seat_name()");
+        auto self = static_cast<WaylandClient*>(data);
+        self->on_seat_name(seat, name);
+    }
+    void WaylandClient::on_seat_name(struct wl_seat* seat, const char* name)
+    {
+        if (name && *name) 
+        {
+            LOG_DEBUG("Seat name: {}", name);
+        } 
+        else 
+        {
+            LOG_DEBUG("Seat name is empty or null");
+        }
     }
 
-    static constexpr wl_seat_listener seat_listener = 
-    {
-        .capabilities = seat_capabilities,
-        .name = seat_name
-    };
-
-    void* bind_to_registry(wl_registry *registry, uint32_t name, const wl_interface* interface, uint32_t client_version, uint32_t server_version)
-    {
-        LOG_DEBUG("Adding {} to registry", interface->name);
-
-        const uint32_t bind_version = std::min(server_version, client_version);
-        
-        if (bind_version < client_version) 
-        {
-            LOG_ERROR("Client supports {} version {}, but server only supports up to version {}.", 
-                interface->name, client_version, server_version);
-            return nullptr;
-        }
-        else if(bind_version < server_version)
-        {
-            LOG_DEBUG("Server supports {} version {}, but client only supports up to {}",
-                interface->name, server_version, client_version);
-        }
-
-        return wl_registry_bind(registry, name, interface, bind_version);
-    }
     
     void WaylandClient::set_seat(wl_seat* seat)
     {
@@ -151,71 +173,54 @@ namespace tobi_engine
         this->shell = XdgShellPtr(shell); 
     }
 
-    void registry_global(void *data, wl_registry *registry, uint32_t name, const char *interface, uint32_t version) 
+    void WaylandClient::registry_global_add(void *data, wl_registry *registry, uint32_t name, const char *interface, uint32_t version) 
     {
-        auto client = static_cast<WaylandClient*>(data);
-        auto it = registry_handlers.find(interface);
-
-        if (it != registry_handlers.end()) 
-            it->second(registry, name, version, client);
+        auto self = static_cast<WaylandClient*>(data);
+        self->on_registry_global_add(registry, name, interface, version);
     }
 
-    void registry_global_remove(void *data, wl_registry *registry, uint32_t name) 
+    void WaylandClient::on_registry_global_add(wl_registry *registry, uint32_t name, const char *interface, uint32_t version)
+    {
+        auto it = registry_handlers.find(interface);
+        if (it != registry_handlers.end())
+            it->second(registry, name, version, this);
+    }
+
+    void WaylandClient::registry_global_remove(void *data, wl_registry *registry, uint32_t name) 
     {
         // This function will be called when a global object is removed from the registry
         LOG_DEBUG("Global object removed: {}", name);
     }
 
-    const struct wl_registry_listener registry_listener = 
-    {
-        .global = registry_global,
-        .global_remove = registry_global_remove
-    };
-
-    std::shared_ptr<WaylandClient> WaylandClient::instance = nullptr;
-
-    std::mutex instance_mutex;
-    std::shared_ptr<WaylandClient> WaylandClient::get_instance()
-    {
-        std::lock_guard<std::mutex> lock(instance_mutex);
-        if(!instance)
-            instance = std::shared_ptr<WaylandClient>(new WaylandClient());
-        return instance;
-    }
-
-    WaylandClient::~WaylandClient() 
-    {
-        if(display)
-            wl_display_flush(display.get());
-    }
-
     WaylandClient::WaylandClient()
-        :   display(nullptr),
-            registry(nullptr),
-            compositor(nullptr),
-            subcompositor(nullptr),
-            shell(nullptr),
-            shm(nullptr),
-            seat(nullptr),
-            keyboard(nullptr),
-            kb_context(nullptr),
-            kb_state(nullptr)
     {
         initialize();
     }
 
     bool WaylandClient::flush()
     {
-        auto ret = wl_display_flush(display.get());
-        wl_display_roundtrip(display.get());
+        if (wl_display_flush(display.get()) == -1)
+        {
+            LOG_ERROR("Failed to flush Wayland display: {}", wl_display_get_error(display.get()));
+            return false;
+        }
+        if (wl_display_roundtrip(display.get()) == -1)
+        {
+            LOG_ERROR("Failed to roundtrip Wayland display: {}", wl_display_get_error(display.get()));
+            return false;
+        }
         
-        return ret != -1;
+        return true;
     }
 
     bool WaylandClient::update()
     {
-        auto ret = wl_display_dispatch(display.get());
-        return ret != -1;
+        if (wl_display_dispatch(display.get()) == -1)
+        {
+            LOG_ERROR("Failed to dispatch Wayland display: {}", wl_display_get_error(display.get()));
+            return false;
+        }
+        return true;
     }
     void WaylandClient::clear()
     {

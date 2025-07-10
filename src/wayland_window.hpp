@@ -15,8 +15,6 @@
 namespace tobi_engine
 {
 
-class WaylandClient;
-
 struct Position
 {
     int32_t x = 0;
@@ -74,8 +72,7 @@ class WaylandWindow : public Window
 
         void create_buffer();
 
-        std::shared_ptr<WaylandClient> client;
-        std::shared_ptr<WaylandCursor> cursor;
+        std::unique_ptr<WaylandCursor> cursor;
 
         std::vector<WaylandSurfacePtr> surfaces;
 
@@ -96,14 +93,7 @@ class WaylandWindow : public Window
         Position pointer_position;
 
         bool is_decorated = true;
-
-        
-};
-
-struct SurfaceUserData
-{
-    WaylandWindow* window;
-    enum SurfaceType { Decoration, Content } surface_type;
+    
 };
 
 }

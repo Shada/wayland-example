@@ -19,7 +19,7 @@ namespace tobi_engine
     using  WlCompositorPtr = std::unique_ptr<wl_compositor, WlCompositorDeleter>;
     struct WlCursorThemeDeleter { void operator()(wl_cursor_theme* ptr) const noexcept { if (ptr) wl_cursor_theme_destroy(ptr); } };
     using  WlCursorThemePtr = std::unique_ptr<wl_cursor_theme, WlCursorThemeDeleter>;
-    struct WlDisplayDeleter { void operator()(wl_display* ptr) const noexcept { if (ptr) wl_display_disconnect(ptr); } };
+    struct WlDisplayDeleter { void operator()(wl_display* ptr) const noexcept { if (ptr) { wl_display_flush(ptr); wl_display_disconnect(ptr); } } };
     using  WlDisplayPtr = std::unique_ptr<wl_display, WlDisplayDeleter>;
     struct WlKeyboardDeleter { void operator()(wl_keyboard* ptr) const noexcept { if (ptr) wl_keyboard_destroy(ptr); } };
     using  WlKeyboardPtr = std::unique_ptr<wl_keyboard, WlKeyboardDeleter>;
