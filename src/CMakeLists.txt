@@ -1,4 +1,3 @@
-
 # Create wayland_window library
 add_library(wayland_window STATIC
     wayland_window.cpp
@@ -7,6 +6,8 @@ add_library(wayland_window STATIC
     wayland_surface_buffer.cpp
     wayland_surface.cpp
     wayland_cursor.cpp
+    wayland_display.cpp
+    wayland_registry.cpp
     window.cpp
     utils/logger.cpp
     utils/utils.cpp

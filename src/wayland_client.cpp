@@ -51,29 +51,31 @@ namespace tobi_engine
 
         return wl_registry_bind(registry, name, interface, bind_version);
     }
-    static const std::unordered_map<std::string_view, std::function<void(wl_registry*, uint32_t, uint32_t, WaylandClient*)>> registry_handlers = 
+
+    WaylandClient::WaylandClient()
+        : registry(std::make_unique<WaylandRegistry>(display))
     {
-        { wl_compositor_interface.name, [](wl_registry* r, uint32_t n, uint32_t v, WaylandClient* client) 
-        {
-            client->set_compositor(static_cast<wl_compositor*>(bind_to_registry(r, n, &wl_compositor_interface, 6, v)));
-        }},
-        { wl_subcompositor_interface.name, [](wl_registry* r, uint32_t n, uint32_t v, WaylandClient* client) 
-        {
-            client->set_subcompositor(static_cast<wl_subcompositor*>(bind_to_registry(r, n, &wl_subcompositor_interface, 1, v)));
-        }},
-        { wl_shm_interface.name, [](wl_registry* r, uint32_t n, uint32_t v, WaylandClient* client) 
-        {
-            client->set_shm(static_cast<wl_shm*>(bind_to_registry(r, n, &wl_shm_interface, 2, v)));
-        }},
-        { xdg_wm_base_interface.name, [](wl_registry* r, uint32_t n, uint32_t v, WaylandClient* client) 
-        {
-            client->set_shell(static_cast<xdg_wm_base*>(bind_to_registry(r, n, &xdg_wm_base_interface, 6, v)));
-        }},
-        { wl_seat_interface.name, [](wl_registry* r, uint32_t n, uint32_t v, WaylandClient* client) 
-        {
-            client->set_seat(static_cast<wl_seat*>(bind_to_registry(r, n, &wl_seat_interface, 4, v)));
-        }},
-    };
+        // Register global add callbacks for each interface
+        registry->register_global_add_callback(wl_compositor_interface.name, [this](wl_registry* reg, uint32_t name, const char*, uint32_t version) {
+            set_compositor(static_cast<wl_compositor*>(bind_to_registry(reg, name, &wl_compositor_interface, 6, version)));
+        });
+        registry->register_global_add_callback(wl_subcompositor_interface.name, [this](wl_registry* reg, uint32_t name, const char*, uint32_t version) {
+            set_subcompositor(static_cast<wl_subcompositor*>(bind_to_registry(reg, name, &wl_subcompositor_interface, 1, version)));
+        });
+        registry->register_global_add_callback(wl_shm_interface.name, [this](wl_registry* reg, uint32_t name, const char*, uint32_t version) {
+            set_shm(static_cast<wl_shm*>(bind_to_registry(reg, name, &wl_shm_interface, 2, version)));
+        });
+        registry->register_global_add_callback(xdg_wm_base_interface.name, [this](wl_registry* reg, uint32_t name, const char*, uint32_t version) {
+            set_shell(static_cast<xdg_wm_base*>(bind_to_registry(reg, name, &xdg_wm_base_interface, 6, version)));
+        });
+        registry->register_global_add_callback(wl_seat_interface.name, [this](wl_registry* reg, uint32_t name, const char*, uint32_t version) {
+            set_seat(static_cast<wl_seat*>(bind_to_registry(reg, name, &wl_seat_interface, 4, version)));
+        });
+        registry->register_global_remove_callback([](wl_registry*, uint32_t name) {
+            LOG_DEBUG("Global object removed: {}", name);
+        });
+        initialize();
+    }
 
     void WaylandClient::shell_ping(void *data, xdg_wm_base *shell, uint32_t serial) 
     {
@@ -173,79 +175,41 @@ namespace tobi_engine
         this->shell = XdgShellPtr(shell); 
     }
 
-    void WaylandClient::registry_global_add(void *data, wl_registry *registry, uint32_t name, const char *interface, uint32_t version) 
-    {
-        auto self = static_cast<WaylandClient*>(data);
-        self->on_registry_global_add(registry, name, interface, version);
-    }
-
-    void WaylandClient::on_registry_global_add(wl_registry *registry, uint32_t name, const char *interface, uint32_t version)
-    {
-        auto it = registry_handlers.find(interface);
-        if (it != registry_handlers.end())
-            it->second(registry, name, version, this);
-    }
-
-    void WaylandClient::registry_global_remove(void *data, wl_registry *registry, uint32_t name) 
-    {
-        // This function will be called when a global object is removed from the registry
-        LOG_DEBUG("Global object removed: {}", name);
-    }
-
-    WaylandClient::WaylandClient()
-    {
-        initialize();
-    }
-
     bool WaylandClient::flush()
     {
-        if (wl_display_flush(display.get()) == -1)
+        if (!display.flush())
         {
-            LOG_ERROR("Failed to flush Wayland display: {}", wl_display_get_error(display.get()));
+            LOG_ERROR("Failed to flush Wayland display");
             return false;
         }
-        if (wl_display_roundtrip(display.get()) == -1)
+        if (!display.roundtrip())
         {
-            LOG_ERROR("Failed to roundtrip Wayland display: {}", wl_display_get_error(display.get()));
+            LOG_ERROR("Failed to roundtrip Wayland display");
             return false;
         }
-        
         return true;
     }
 
     bool WaylandClient::update()
     {
-        if (wl_display_dispatch(display.get()) == -1)
+        if (!display.dispatch())
         {
-            LOG_ERROR("Failed to dispatch Wayland display: {}", wl_display_get_error(display.get()));
+            LOG_ERROR("Failed to dispatch Wayland display");
             return false;
         }
         return true;
     }
     void WaylandClient::clear()
     {
-        wl_display_dispatch_pending(display.get());
-        wl_display_roundtrip(display.get());
+        display.dispatch_pending();
+        display.roundtrip();
     }
 
     void WaylandClient::initialize()
     {
         LOG_DEBUG("initilizing Wayland Client");
-        display = WlDisplayPtr(wl_display_connect(nullptr));
-        if(!display)
-            throw std::runtime_error("Failed to create Wayland Display!");
-
-        registry = WlRegistryPtr(wl_display_get_registry(display.get()));
-        if(!registry)
-            throw std::runtime_error("Failed to create Wayland Registry!");
-
-        wl_registry_add_listener(registry.get(), &registry_listener, this);
-
-        // Round-trip to synchronize with the server
-        wl_display_roundtrip(display.get());
-
+        display.roundtrip();
         kb_context = XkbContextPtr(xkb_context_new(XKB_CONTEXT_NO_FLAGS));
-
     }
     
 }

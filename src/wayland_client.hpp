@@ -2,6 +2,8 @@
 
 #include "wayland_types.hpp"
 #include "wayland_window.hpp"
+#include "wayland_display.hpp"
+#include "wayland_registry.hpp"
 
 namespace tobi_engine
 {
@@ -50,14 +52,6 @@ class WaylandClient
         void clear();
 
     private:
-        static void registry_global_add(void *data, 
-                                        wl_registry *registry, 
-                                        uint32_t name, 
-                                        const char *interface, 
-                                        uint32_t version);
-        static void registry_global_remove( void *data, 
-                                            wl_registry *registry, 
-                                            uint32_t name);
         
         static void seat_capabilities(void* data, struct wl_seat* seat, uint32_t capabilities);
         static void seat_name(void* data, struct wl_seat* seat, const char* name);
@@ -72,18 +66,7 @@ class WaylandClient
         {
             &WaylandClient::shell_ping
         };
-                                          
-        static inline const wl_registry_listener registry_listener
-        {
-            &WaylandClient::registry_global_add,
-            &WaylandClient::registry_global_remove
-        };
 
-        void on_registry_global_add(wl_registry *registry, 
-                                    uint32_t name, 
-                                    const char *interface, 
-                                    uint32_t version);
-        void on_registry_global_remove(wl_registry *registry, uint32_t name);
         void on_shell_ping(xdg_wm_base *shell, uint32_t serial);
         void on_seat_capabilities(wl_seat *seat, uint32_t capabilities);
         void on_seat_name(wl_seat *seat, const char *name); 
@@ -92,8 +75,8 @@ class WaylandClient
 
         void initialize();
 
-        WlDisplayPtr display;
-        WlRegistryPtr registry;
+        WaylandDisplay display;
+        std::unique_ptr<WaylandRegistry> registry;
 
         WlCompositorPtr compositor;
 
