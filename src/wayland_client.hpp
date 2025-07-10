@@ -1,6 +1,7 @@
 #pragma once
 
 #include "wayland_types.hpp"
+#include "wayland_window.hpp"
 
 namespace tobi_engine
 {
@@ -38,6 +39,11 @@ class WaylandClient
         void set_keymap(xkb_keymap* keymap) { this->kb_keymap = XkbKeymapPtr(keymap); }
         void set_kb_state(xkb_state* state) { this->kb_state = XkbStatePtr(state); }
 
+        
+        std::shared_ptr<WaylandWindow> create_window(WindowProperties properties)
+        {
+            return std::make_shared<WaylandWindow>(properties);
+        }
         
         bool flush();
         bool update();
