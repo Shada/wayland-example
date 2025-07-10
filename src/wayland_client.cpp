@@ -87,7 +87,7 @@ namespace tobi_engine
         bool is_pointer_supported = capabilities & WL_SEAT_CAPABILITY_POINTER;
         if(is_pointer_supported && !client->get_pointer())
         {
-            auto pointer = PointerPtr(wl_seat_get_pointer(seat));
+            auto pointer = WlPointerPtr(wl_seat_get_pointer(seat));
             wl_pointer_add_listener(pointer.get(), &pointer_listener, client);
             client->set_pointer(std::move(pointer));
         }
@@ -137,7 +137,7 @@ namespace tobi_engine
             return;
         }
         wl_seat_add_listener(seat, &seat_listener, this);
-        this->seat = SeatPtr(seat);
+        this->seat = WlSeatPtr(seat);
     }
 
     void WaylandClient::set_shell(xdg_wm_base* shell)
@@ -226,11 +226,11 @@ namespace tobi_engine
     void WaylandClient::initialize()
     {
         LOG_DEBUG("initilizing Wayland Client");
-        display = DisplayPtr(wl_display_connect(nullptr));
+        display = WlDisplayPtr(wl_display_connect(nullptr));
         if(!display)
             throw std::runtime_error("Failed to create Wayland Display!");
 
-        registry = RegistryPtr(wl_display_get_registry(display.get()));
+        registry = WlRegistryPtr(wl_display_get_registry(display.get()));
         if(!registry)
             throw std::runtime_error("Failed to create Wayland Registry!");
 
@@ -239,7 +239,7 @@ namespace tobi_engine
         // Round-trip to synchronize with the server
         wl_display_roundtrip(display.get());
 
-        kb_context = KbContextPtr(xkb_context_new(XKB_CONTEXT_NO_FLAGS));
+        kb_context = XkbContextPtr(xkb_context_new(XKB_CONTEXT_NO_FLAGS));
 
     }
     

@@ -157,8 +157,8 @@ void WaylandWindow::initialize()
         x_surface.reset(xdg_wm_base_get_xdg_surface(client->get_shell(), surfaces[0]->get_surface()));
         xdg_surface_add_listener(x_surface.get(), &xdg_surface_listener, this);
 
-        wl_surface_set_user_data(surfaces[0]->get_surface(), new SurfaceUserData{this, SurfaceUserData::Decoration});
-        wl_surface_set_user_data(surfaces.back()->get_surface(), new SurfaceUserData{this, SurfaceUserData::Content});
+        wl_surface_set_user_data(surfaces[0]->get_surface(), this);
+        wl_surface_set_user_data(surfaces.back()->get_surface(), this);
     }
     else
     {
@@ -170,7 +170,7 @@ void WaylandWindow::initialize()
         x_surface.reset(xdg_wm_base_get_xdg_surface(client->get_shell(), surfaces.back()->get_surface()));
         xdg_surface_add_listener(x_surface.get(), &xdg_surface_listener, this);
 
-        wl_surface_set_user_data(surfaces.back()->get_surface(), new SurfaceUserData{this, SurfaceUserData::Content});
+        wl_surface_set_user_data(surfaces.back()->get_surface(), this);
     }
 
     x_toplevel.reset(xdg_surface_get_toplevel(x_surface.get()));

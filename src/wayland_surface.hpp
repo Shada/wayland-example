@@ -28,8 +28,8 @@ namespace tobi_engine
         virtual void resize(uint32_t width, uint32_t height);
     
     protected:
-        SurfacePtr surface;
-        SubSurfacePtr subsurface;
+        WlSurfacePtr surface;
+        WlSubSurfacePtr subsurface;
         SurfaceBufferPtr buffer;
 
         uint32_t width;

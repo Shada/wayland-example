@@ -34,7 +34,7 @@ namespace tobi_engine
             uint32_t height;
             uint32_t size;
             uint32_t* memory;
-            BufferPtr buffer;
+            WlBufferPtr buffer;
             static constexpr uint32_t PIXEL_SIZE = sizeof(uint32_t);
     };
 

@@ -47,9 +47,9 @@ namespace tobi_engine
     {
         LOG_DEBUG("keyboard_enter()");
         auto& window_registry = WindowRegistry::get_instance();
-        auto surface_data = static_cast<SurfaceUserData*>(wl_surface_get_user_data(surface));
+        auto window = static_cast<WaylandWindow*>(wl_surface_get_user_data(surface));
         
-        window_registry.set_active_window(surface_data->window->get_uid());
+        window_registry.set_active_window(window->get_uid());
 
     }
 
@@ -101,10 +101,7 @@ namespace tobi_engine
             return;
 
         auto& window_registry = WindowRegistry::get_instance();
-        auto surface_data =static_cast<SurfaceUserData*>(wl_surface_get_user_data(surface));
-        if (!surface_data)
-            return;
-        auto window = surface_data->window;
+        auto window =static_cast<WaylandWindow*>(wl_surface_get_user_data(surface));
         if (!window)
             return;
         window_registry.set_pointer_active_window(window->get_uid());
@@ -131,10 +128,7 @@ namespace tobi_engine
 
         if (!surface)
             return;
-        auto surface_data = static_cast<SurfaceUserData*>(wl_surface_get_user_data(surface));
-        if (!surface_data)
-            return;
-        auto window = surface_data->window;
+        auto window = static_cast<WaylandWindow*>(wl_surface_get_user_data(surface));
         if (!window)
             return;
         window->pointer_event.pointer = nullptr;

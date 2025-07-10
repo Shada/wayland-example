@@ -24,17 +24,17 @@ class WaylandClient
         xkb_context* get_xkb_context() const { return kb_context.get(); }
         xkb_state* get_state() const { return kb_state.get(); }
         
-        void set_compositor(wl_compositor* compositor) { this->compositor = CompositorPtr(compositor); }
-        void set_subcompositor(wl_subcompositor* subcompositor) { this->subcompositor = SubCompositorPtr(subcompositor); }
+        void set_compositor(wl_compositor* compositor) { this->compositor = WlCompositorPtr(compositor); }
+        void set_subcompositor(wl_subcompositor* subcompositor) { this->subcompositor = WlSubCompositorPtr(subcompositor); }
         void set_shell(xdg_wm_base* shell);
-        void set_shm(wl_shm* shm) { this->shm = ShmPtr(shm); }
+        void set_shm(wl_shm* shm) { this->shm = WlShmPtr(shm); }
         void set_seat(wl_seat* seat);
-        void set_keyboard(wl_keyboard* keyboard) { this->keyboard = KeyboardPtr(keyboard); }
+        void set_keyboard(wl_keyboard* keyboard) { this->keyboard = WlKeyboardPtr(keyboard); }
         void unset_keyboard() { this->keyboard.reset(); }
-        void set_pointer(PointerPtr pointer) { this->pointer = std::move(pointer); }
+        void set_pointer(WlPointerPtr pointer) { this->pointer = std::move(pointer); }
         void unset_pointer() { this->pointer.reset(); }
-        void set_keymap(xkb_keymap* keymap) { this->kb_keymap = KbKeymapPtr(keymap); }
-        void set_kb_state(xkb_state* state) { this->kb_state = KbStatePtr(state); }
+        void set_keymap(xkb_keymap* keymap) { this->kb_keymap = XkbKeymapPtr(keymap); }
+        void set_kb_state(xkb_state* state) { this->kb_state = XkbStatePtr(state); }
 
         
         bool flush();
@@ -50,20 +50,20 @@ class WaylandClient
         void initialize();
 
 
-        DisplayPtr display;
-        RegistryPtr registry;
+        WlDisplayPtr display;
+        WlRegistryPtr registry;
 
-        CompositorPtr compositor;
+        WlCompositorPtr compositor;
 
-        SubCompositorPtr subcompositor;
+        WlSubCompositorPtr subcompositor;
         XdgShellPtr shell;
-        ShmPtr shm;
-        SeatPtr seat;
-        KeyboardPtr keyboard;
-        PointerPtr pointer;
-        KbContextPtr kb_context;
-        KbKeymapPtr kb_keymap;
-        KbStatePtr kb_state;
+        WlShmPtr shm;
+        WlSeatPtr seat;
+        WlKeyboardPtr keyboard;
+        WlPointerPtr pointer;
+        XkbContextPtr kb_context;
+        XkbKeymapPtr kb_keymap;
+        XkbStatePtr kb_state;
 };
 
 }

@@ -6,7 +6,6 @@ add_library(wayland_window STATIC
     wayland_client.cpp
     wayland_surface_buffer.cpp
     wayland_surface.cpp
-    wayland_types.cpp
     wayland_cursor.cpp
     window.cpp
     utils/logger.cpp

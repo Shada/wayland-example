@@ -20,8 +20,8 @@ namespace tobi_engine
         void set_cursor(const std::string& cursor_name);
     
     private:
-        SurfacePtr surface;
-        CursorThemePtr theme;
+        WlSurfacePtr surface;
+        WlCursorThemePtr theme;
 
         std::unordered_map<std::string_view, wl_cursor*> cursors;
 
