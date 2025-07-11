@@ -1,0 +1,20 @@
+# Doxyfile.in - Template for Doxygen configuration
+PROJECT_NAME           = "@PROJECT_NAME@"
+PROJECT_NUMBER         = @PROJECT_VERSION@
+OUTPUT_DIRECTORY       = generated-docs
+INPUT                  = ../include ../src
+FILE_PATTERNS          = *.cpp \
+                         *.hpp
+EXCLUDE                = README.md
+RECURSIVE              = YES
+GENERATE_LATEX         = NO
+QUIET                  = YES
+GENERATE_HTML          = YES
+GENERATE_MAN           = NO
+GENERATE_XML           = NO
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = YES
+EXTRACT_STATIC         = NO
+EXTRACT_LOCAL_CLASSES  = YES
+EXTRACT_ANON_NSPACES   = YES
+CLANG_ASSISTED_PARSING = NO
