@@ -1,0 +1,13 @@
+# - Try to find wayland-cursor using pkg-config
+#
+# Sets the following variables:
+#  WAYLAND_CURSOR_FOUND
+#  WAYLAND_CURSOR_LIBRARIES
+#  WAYLAND_CURSOR_INCLUDE_DIRS
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(WAYLAND_CURSOR REQUIRED wayland-cursor)
+
+set(WAYLAND_CURSOR_FOUND ${WAYLAND_CURSOR_FOUND})
+set(WAYLAND_CURSOR_LIBRARIES ${WAYLAND_CURSOR_LIBRARIES})
+set(WAYLAND_CURSOR_INCLUDE_DIRS ${WAYLAND_CURSOR_INCLUDE_DIRS})

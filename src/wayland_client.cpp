@@ -31,49 +31,21 @@ struct wl_interface;
 
 namespace tobi_engine
 {
-    void* bind_to_registry(wl_registry *registry, uint32_t name, const wl_interface* interface, uint32_t client_version, uint32_t server_version)
-    {
-        LOG_DEBUG("Adding {} to registry", interface->name);
-
-        const uint32_t bind_version = std::min(server_version, client_version);
-        
-        if (bind_version < client_version) 
-        {
-            LOG_ERROR("Client supports {} version {}, but server only supports up to version {}.", 
-                interface->name, client_version, server_version);
-            return nullptr;
-        }
-        else if(bind_version < server_version)
-        {
-            LOG_DEBUG("Server supports {} version {}, but client only supports up to {}",
-                interface->name, server_version, client_version);
-        }
-
-        return wl_registry_bind(registry, name, interface, bind_version);
-    }
 
     WaylandClient::WaylandClient()
-        : registry(std::make_unique<WaylandRegistry>(display))
+        : wayland_registry(std::make_unique<WaylandRegistry>(display))
     {
-        // Register global add callbacks for each interface
-        registry->register_global_add_callback(wl_compositor_interface.name, [this](wl_registry* reg, uint32_t name, const char*, uint32_t version) {
-            set_compositor(static_cast<wl_compositor*>(bind_to_registry(reg, name, &wl_compositor_interface, 6, version)));
-        });
-        registry->register_global_add_callback(wl_subcompositor_interface.name, [this](wl_registry* reg, uint32_t name, const char*, uint32_t version) {
-            set_subcompositor(static_cast<wl_subcompositor*>(bind_to_registry(reg, name, &wl_subcompositor_interface, 1, version)));
-        });
-        registry->register_global_add_callback(wl_shm_interface.name, [this](wl_registry* reg, uint32_t name, const char*, uint32_t version) {
-            set_shm(static_cast<wl_shm*>(bind_to_registry(reg, name, &wl_shm_interface, 2, version)));
-        });
-        registry->register_global_add_callback(xdg_wm_base_interface.name, [this](wl_registry* reg, uint32_t name, const char*, uint32_t version) {
-            set_shell(static_cast<xdg_wm_base*>(bind_to_registry(reg, name, &xdg_wm_base_interface, 6, version)));
-        });
-        registry->register_global_add_callback(wl_seat_interface.name, [this](wl_registry* reg, uint32_t name, const char*, uint32_t version) {
-            set_seat(static_cast<wl_seat*>(bind_to_registry(reg, name, &wl_seat_interface, 4, version)));
-        });
-        registry->register_global_remove_callback([](wl_registry*, uint32_t name) {
-            LOG_DEBUG("Global object removed: {}", name);
-        });
+        if (!display.roundtrip()) // Temporary
+        {
+            LOG_ERROR("Failed to roundtrip Wayland display during initialization!");
+            throw std::runtime_error("Failed to initialize Wayland Client");
+        }
+        compositor = WlCompositorPtr(static_cast<wl_compositor*>(wayland_registry->bind_interface(wl_compositor_interface.name, &wl_compositor_interface, 6)));
+        subcompositor = WlSubCompositorPtr(static_cast<wl_subcompositor*>(wayland_registry->bind_interface(wl_subcompositor_interface.name, &wl_subcompositor_interface, 1)));
+        shm = WlShmPtr(static_cast<wl_shm*>(wayland_registry->bind_interface(wl_shm_interface.name, &wl_shm_interface, 2)));
+        set_shell(static_cast<xdg_wm_base*>(wayland_registry->bind_interface(xdg_wm_base_interface.name, &xdg_wm_base_interface, 6)));
+        set_seat(static_cast<wl_seat*>(wayland_registry->bind_interface(wl_seat_interface.name, &wl_seat_interface, 4)));
+
         initialize();
     }
 
@@ -202,13 +174,20 @@ namespace tobi_engine
     void WaylandClient::clear()
     {
         display.dispatch_pending();
-        display.roundtrip();
+        if (!display.roundtrip())
+        {
+            LOG_WARNING("Failed to roundtrip Wayland display");
+        }
     }
 
     void WaylandClient::initialize()
     {
         LOG_DEBUG("initilizing Wayland Client");
-        display.roundtrip();
+        //if (!display.roundtrip())
+        //{
+        //    LOG_ERROR("Failed to roundtrip Wayland display after initialization!");
+        //    throw std::runtime_error("Failed to initialize Wayland Client");
+        //}
         kb_context = XkbContextPtr(xkb_context_new(XKB_CONTEXT_NO_FLAGS));
     }
     

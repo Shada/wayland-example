@@ -1,0 +1,13 @@
+# - Try to find wayland-client using pkg-config
+#
+# Sets the following variables:
+#  WAYLAND_CLIENT_FOUND
+#  WAYLAND_CLIENT_LIBRARIES
+#  WAYLAND_CLIENT_INCLUDE_DIRS
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(WAYLAND_CLIENT REQUIRED wayland-client)
+
+set(WAYLAND_CLIENT_FOUND ${WAYLAND_CLIENT_FOUND})
+set(WAYLAND_CLIENT_LIBRARIES ${WAYLAND_CLIENT_LIBRARIES})
+set(WAYLAND_CLIENT_INCLUDE_DIRS ${WAYLAND_CLIENT_INCLUDE_DIRS})

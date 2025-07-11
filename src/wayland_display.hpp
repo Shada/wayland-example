@@ -1,33 +1,59 @@
 #pragma once
 
-#include "../wayland_types.hpp"
+#include "wayland_types.hpp"
 
-namespace tobi_engine 
+namespace tobi_engine
 {
+    /**
+     * @brief Wayland display connection (internal).
+     */
+    class WaylandDisplay
+    {
+    public:
+        /**
+         * @brief Connect to the Wayland server.
+         * @throws std::runtime_error if the connection fails.
+         */
+        WaylandDisplay();
 
-class WaylandDisplay 
-{
-public:
-    WaylandDisplay();
-    wl_display* get() const { return display.get(); }
-    bool flush() 
-    {
-        return wl_display_flush(display.get()) != -1;
-    }
-    bool dispatch() 
-    {
-        return wl_display_dispatch(display.get()) != -1;
-    }
-    bool roundtrip() 
-    {
-        return wl_display_roundtrip(display.get()) != -1;
-    }
-    void dispatch_pending() 
-    {
-        wl_display_dispatch_pending(display.get());
-    }
-private:
-    WlDisplayPtr display;
-};
+        WaylandDisplay(const WaylandDisplay&) = delete;
+        WaylandDisplay& operator=(const WaylandDisplay&) = delete;
+        WaylandDisplay(WaylandDisplay&&) = default;
+        WaylandDisplay& operator=(WaylandDisplay&&) = default;
+        ~WaylandDisplay() noexcept = default;
+
+        /**
+         * @brief Get the raw Wayland display pointer.
+         * @return Pointer to the Wayland display.
+         * @warning Do not call wl_display_disconnect on the returned pointer; it is managed by this class.
+         */
+        constexpr wl_display* get() const noexcept { return display.get(); }
+
+        /**
+         * @brief Flush pending requests.
+         * @return True if successful, false otherwise.
+         */
+        [[nodiscard]] bool flush() noexcept;
+
+        /**
+         * @brief Dispatch events.
+         * @return True if successful, false otherwise.
+         */
+        [[nodiscard]] bool dispatch() noexcept;
+
+        /**
+         * @brief Block until all requests are processed.
+         * @return True if successful, false otherwise.
+         */
+        [[nodiscard]] bool roundtrip() noexcept;
+
+        /**
+         * @brief Dispatch pending events.
+         */
+        void dispatch_pending() noexcept;
+
+    private:
+        WlDisplayPtr display;
+    };
 
 } // namespace tobi_engine

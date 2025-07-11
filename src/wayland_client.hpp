@@ -29,11 +29,7 @@ class WaylandClient
         xkb_context* get_xkb_context() const { return kb_context.get(); }
         xkb_state* get_state() const { return kb_state.get(); }
         
-        void set_compositor(wl_compositor* compositor) { this->compositor = WlCompositorPtr(compositor); }
-        void set_subcompositor(wl_subcompositor* subcompositor) { this->subcompositor = WlSubCompositorPtr(subcompositor); }
-        void set_shell(xdg_wm_base* shell);
-        void set_shm(wl_shm* shm) { this->shm = WlShmPtr(shm); }
-        void set_seat(wl_seat* seat);
+        void reset_compositor() { this->compositor.reset(); }
         void set_keyboard(wl_keyboard* keyboard) { this->keyboard = WlKeyboardPtr(keyboard); }
         void unset_keyboard() { this->keyboard.reset(); }
         void set_pointer(wl_pointer* pointer) { this->pointer = WlPointerPtr(pointer); }
@@ -53,10 +49,13 @@ class WaylandClient
 
     private:
         
+        void set_shell(xdg_wm_base* shell);
+        void set_seat(wl_seat* seat);
+        
         static void seat_capabilities(void* data, struct wl_seat* seat, uint32_t capabilities);
         static void seat_name(void* data, struct wl_seat* seat, const char* name);
         static void shell_ping(void *data, xdg_wm_base *shell, uint32_t serial);
-        
+
         static constexpr wl_seat_listener seat_listener
         {
             &WaylandClient::seat_capabilities,
@@ -76,7 +75,7 @@ class WaylandClient
         void initialize();
 
         WaylandDisplay display;
-        std::unique_ptr<WaylandRegistry> registry;
+        std::unique_ptr<WaylandRegistry> wayland_registry;
 
         WlCompositorPtr compositor;
 
