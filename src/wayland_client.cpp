@@ -40,11 +40,17 @@ namespace tobi_engine
             LOG_ERROR("Failed to roundtrip Wayland display during initialization!");
             throw std::runtime_error("Failed to initialize Wayland Client");
         }
-        compositor = WlCompositorPtr(static_cast<wl_compositor*>(wayland_registry->bind_interface(wl_compositor_interface.name, &wl_compositor_interface, 6)));
-        subcompositor = WlSubCompositorPtr(static_cast<wl_subcompositor*>(wayland_registry->bind_interface(wl_subcompositor_interface.name, &wl_subcompositor_interface, 1)));
-        shm = WlShmPtr(static_cast<wl_shm*>(wayland_registry->bind_interface(wl_shm_interface.name, &wl_shm_interface, 2)));
-        set_shell(static_cast<xdg_wm_base*>(wayland_registry->bind_interface(xdg_wm_base_interface.name, &xdg_wm_base_interface, 6)));
-        //set_seat(static_cast<wl_seat*>(wayland_registry->bind_interface(wl_seat_interface.name, &wl_seat_interface, 4)));
+        compositor = wayland_registry->bind<wl_compositor>();
+        subcompositor = wayland_registry->bind<wl_subcompositor>();
+        shm = wayland_registry->bind<wl_shm>();
+        shell = wayland_registry->bind<xdg_wm_base>();
+        if (!compositor || !subcompositor || !shm || !shell)
+        {
+            LOG_ERROR("Failed to bind required Wayland interfaces!");
+            throw std::runtime_error("Failed to initialize Wayland Client");
+        }
+        xdg_wm_base_add_listener(shell.get(), &shell_listener, this);
+
         wayland_input_manager = std::make_unique<WaylandInputManager>(*wayland_registry);
         initialize();
     }
@@ -58,17 +64,6 @@ namespace tobi_engine
     void WaylandClient::on_shell_ping(xdg_wm_base *shell, uint32_t serial) 
     {
         xdg_wm_base_pong(shell, serial);
-    }
-
-    void WaylandClient::set_shell(xdg_wm_base* shell)
-    {
-        if(!shell)
-        {
-            LOG_ERROR("Failed to set shell: shell is null");
-            return;
-        }
-        xdg_wm_base_add_listener(shell, &shell_listener, this);
-        this->shell = XdgShellPtr(shell); 
     }
 
     bool WaylandClient::flush()

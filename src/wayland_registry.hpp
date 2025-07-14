@@ -1,9 +1,11 @@
 #pragma once
 
 #include "wayland_types.hpp"
+#include "utils/logger.hpp"
 
 
 #include <string>
+#include <type_traits>
 #include <unordered_map>
 #include <string_view>
 #include <cstdint>
@@ -51,12 +53,28 @@ namespace tobi_engine
 
         /**
          * @brief Bind a global interface by name.
-         * @param interface_name The name of the global interface to bind.
-         * @param interface The Wayland interface description.
-         * @param version Desired version to bind.
+         * @param required_version Desired version to bind.
          * @return Pointer to the bound interface, or nullptr on failure.
          */
-        [[nodiscard]] void* bind_interface(std::string interface_name, const wl_interface* interface, uint32_t version) noexcept;
+
+        template<typename Prot>
+        [[nodiscard]] WlUniquePtr<Prot> bind(uint32_t required_version = WaylandInterfaceTraits<Prot>::version) noexcept
+        {
+            auto it = available_global_interfaces.find(WaylandInterfaceTraits<Prot>::name);
+            if (it == available_global_interfaces.end())
+            {
+                LOG_ERROR("Interface {} is not registered in the Wayland registry!", WaylandInterfaceTraits<Prot>::name);
+                return { nullptr, WlDeleter<Prot>{} };
+            }
+            uint32_t version = std::min(required_version, it->second.version);
+            Prot *proxy = static_cast<Prot*>(
+                wl_registry_bind(
+                    registry.get(),
+                    it->second.name,
+                    WaylandInterfaceTraits<Prot>::interface, 
+                    version));
+            return { proxy, WlDeleter<Prot>{} };
+        }
         
     private:
         void initialize();

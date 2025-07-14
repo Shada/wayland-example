@@ -7,12 +7,13 @@
 #include <stdexcept>
 #include <sys/mman.h>
 #include <unistd.h>
+#include <wayland-client-protocol.h>
 
 namespace tobi_engine
 {
 
     WaylandInputManager::WaylandInputManager(WaylandRegistry& registry)
-        : seat(WlSeatPtr(static_cast<wl_seat*>(registry.bind_interface(wl_seat_interface.name, &wl_seat_interface, 4))))
+     : seat(registry.bind<wl_seat>(4))
     {
         if (!seat) 
         {
@@ -22,7 +23,7 @@ namespace tobi_engine
 
         wl_seat_add_listener(seat.get(), &seat_listener, this);
         LOG_DEBUG("WaylandInputManager initialized with seat");
-        
+
         kb_context = XkbContextPtr(xkb_context_new(XKB_CONTEXT_NO_FLAGS));
     }
 

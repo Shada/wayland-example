@@ -9,6 +9,7 @@ add_library(wayland_window STATIC
     wayland_cursor.cpp
     wayland_display.cpp
     wayland_registry.cpp
+    wayland_context.cpp
     window.cpp
     utils/logger.cpp
     utils/utils.cpp

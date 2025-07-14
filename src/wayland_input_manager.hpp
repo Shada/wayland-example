@@ -68,7 +68,7 @@ namespace tobi_engine
         
     private:
 
-        WlSeatPtr seat;
+        WlUniquePtr<wl_seat> seat;
         WlPointerPtr pointer;
         WlKeyboardPtr keyboard;
         XkbContextPtr kb_context;

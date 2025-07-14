@@ -31,41 +31,6 @@ void WaylandRegistry::initialize()
     wl_registry_add_listener(registry.get(), &registry_listener, this);
 }
 
-void* WaylandRegistry::bind_interface(std::string interface_name, const wl_interface* interface, uint32_t version) noexcept
-{
-    if (!registry)
-    {
-        LOG_ERROR("WaylandRegistry is not initialized!");
-        return nullptr;
-    }
-
-    if (interface_name.empty())
-    {
-        LOG_ERROR("Interface name cannot be empty!");
-        return nullptr;
-    }
-
-    auto it = available_global_interfaces.find(interface_name.data()); 
-
-    if (it == available_global_interfaces.end())
-    {
-        LOG_ERROR("Interface {} is not registered in the Wayland registry!", interface_name);
-        return nullptr;
-    }
-    
-    if (version > it->second.version)
-    {
-        LOG_ERROR("Requested version {} for interface {} is not supported (available: 1-{})", 
-            version, interface_name, it->second.version);
-        return nullptr;
-    }
-
-    LOG_DEBUG("Binding interface {} with version {}", interface_name, version);
-
-    registered_global_interfaces[it->second.name] = interface_name;
-    return wl_registry_bind(registry.get(), it->second.name, interface, version);
-}
-
 void WaylandRegistry::handle_registry_global_add(void *data, wl_registry *registry, uint32_t name, const char *interface, uint32_t version) noexcept
 {
     auto self = static_cast<WaylandRegistry*>(data);
