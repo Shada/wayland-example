@@ -33,23 +33,15 @@ namespace tobi_engine
 {
 
     WaylandClient::WaylandClient()
-        : wayland_registry(std::make_unique<WaylandRegistry>(display))
+        :   display(std::make_unique<WaylandDisplay>()), 
+            wayland_registry(std::make_unique<WaylandRegistry>(display->get()))
     {
-        if (!display.roundtrip()) // Temporary
-        {
-            LOG_ERROR("Failed to roundtrip Wayland display during initialization!");
-            throw std::runtime_error("Failed to initialize Wayland Client");
-        }
-        compositor = wayland_registry->bind<wl_compositor>();
-        subcompositor = wayland_registry->bind<wl_subcompositor>();
-        shm = wayland_registry->bind<wl_shm>();
-        shell = wayland_registry->bind<xdg_wm_base>();
-        if (!compositor || !subcompositor || !shm || !shell)
-        {
-            LOG_ERROR("Failed to bind required Wayland interfaces!");
-            throw std::runtime_error("Failed to initialize Wayland Client");
-        }
-        xdg_wm_base_add_listener(shell.get(), &shell_listener, this);
+        LOG_DEBUG("Constructing CLient");
+        compositor = wayland_registry->get_protocol<wl_compositor>();
+        subcompositor = wayland_registry->get_protocol<wl_subcompositor>();
+        shm = wayland_registry->get_protocol<wl_shm>();
+        shell = wayland_registry->get_protocol<xdg_wm_base>();
+        xdg_wm_base_add_listener(shell, &shell_listener, this);
 
         wayland_input_manager = std::make_unique<WaylandInputManager>(*wayland_registry);
         initialize();
@@ -68,12 +60,12 @@ namespace tobi_engine
 
     bool WaylandClient::flush()
     {
-        if (!display.flush())
+        if (!display->flush())
         {
             LOG_ERROR("Failed to flush Wayland display");
             return false;
         }
-        if (!display.roundtrip())
+        if (!display->roundtrip())
         {
             LOG_ERROR("Failed to roundtrip Wayland display");
             return false;
@@ -83,7 +75,7 @@ namespace tobi_engine
 
     bool WaylandClient::update()
     {
-        if (!display.dispatch())
+        if (!display->dispatch())
         {
             LOG_ERROR("Failed to dispatch Wayland display");
             return false;
@@ -92,8 +84,8 @@ namespace tobi_engine
     }
     void WaylandClient::clear()
     {
-        display.dispatch_pending();
-        if (!display.roundtrip())
+        display->dispatch_pending();
+        if (!display->roundtrip())
         {
             LOG_WARNING("Failed to roundtrip Wayland display");
         }

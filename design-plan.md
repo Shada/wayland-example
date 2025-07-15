@@ -9,19 +9,19 @@
 
 ## 2. Proposed Modules
 ```text
-┌────────────────┐      ┌────────────────────┐
-│ WaylandDisplay │      │    MainLoop        │
-└────────────────┘      └────────────────────┘
-         │                       ▲
-         ▼                       │
-┌────────────────┐      ┌────────────────────┐
-│ WaylandRegistry├─────▶│  WindowManager     │
-└────────────────┘      └────────────────────┘
-         │                       ▲
-         ▼                       │
-┌────────────────┐      ┌────────────────────┐
-│WaylandContext  │─────▶│WaylandInputManager │
-└────────────────┘      └────────────────────┘
+┌────────────────┐
+│ WaylandDisplay │       ┌────────────────────┐
+└────────────────┘       │      MainLoop      │
+         │               └────────────────────┘
+         ▼                         ▲
+┌────────────────┐       ┌────────────────────┐
+│ WaylandRegistry├──────▶│ WindowManager      │
+└────────────────┘       └────────────────────┘
+         │                         ▲
+         ▼                         │
+┌────────────────┐       ┌────────────────────┐
+│ WaylandContext │──────▶│ WaylandInputManager│
+└────────────────┘       └────────────────────┘
          │
          ▼
 ┌────────────────┐
@@ -31,49 +31,54 @@
 **Legend**: arrows denote “depends on / uses”
 
 ### 2.1 WaylandDisplay
-- Low-level connection to `wl_display`
-- Exposes raw `wl_display*` for dispatch/flush
+- Sole responsibility: wrap `wl_display_connect()` / `wl_display_disconnect()` and own the `wl_display*` handle
+- Exposes raw `wl_display*` for event dispatch and flush
 
 ### 2.2 WaylandRegistry
-- Binds globals via `bind<Protocol>()`
-- Populates `available_global_interfaces` on roundtrip
-- No casting or stringly-typed APIs
+- Binds all core Wayland globals (e.g. `wl_compositor`, `wl_shm`, `xdg_wm_base`, `wl_seat`, data-device manager, etc.)
+- Constructor takes `(wl_display*, wl_event_queue*)`, sets up listeners for global add/remove
+- Provides typed getters, e.g. `compositor()`, `shm()`, `xdgShell()`, `seat()`, etc.
+- Exposes a `sync()` or uses `wl_display_roundtrip_queue` to complete binding
 
 ### 2.3 WaylandContext
-- Owns `WaylandDisplay` + `WaylandRegistry` (via `std::unique_ptr`)
-- Holds typed `WlUniquePtr<...>` members for compositor, subcompositor, shell, shm, etc.
-- Implements event-loop primitives:
+- Composition root: owns `WaylandDisplay`, a `wl_event_queue*`, and `WaylandRegistry`
+- In ctor:
+  1. connect display (`WaylandDisplay`)
+  2. create event queue (`wl_display_create_queue`)
+  3. construct `WaylandRegistry(display.handle(), queue)`
+  4. call `registry.sync()` to finish global binds
+- Exposes:
   - `dispatch(int timeout_ms)` / `dispatch_pending()`
   - `flush()`
-  - template `get<Protocol>()` accessors for bound interfaces
+  - template `get<Protocol>()` to access bound interfaces
 
 ### 2.4 WaylandInputManager
 - Constructs with `WaylandRegistry&`
-- Binds seat, pointer, keyboard, XKB state
-- Registers input listeners only
+- Binds `wl_seat`, pointer, keyboard, and XKB state listeners
+- Exposes input events and state to higher-level code
 
 ### 2.5 WaylandWindow & WindowManager
-- `WaylandWindow` deals with surface creation, frame callbacks
-- `WindowManager` (or Factory) owns multiple windows
-- Constructed with `(WaylandContext&, WaylandInputManager&)`
+- `WaylandWindow` manages `wl_surface`, `xdg_surface`, toplevel setup, frame callbacks
+- `WindowManager` owns and tracks multiple windows, provides factory methods
+- Both take dependencies on `WaylandContext` (for display/registry/queue) and `WaylandInputManager` as needed
 
 ### 2.6 MainLoop
-- Orchestrates:  
-  1. `ctx.dispatch(timeout_ms)`  
-  2. App-level update/draw  
-  3. `ctx.flush()`  
-  4. Exit checks
+- Orchestrates:
+  1. `context.dispatch(timeout_ms)`
+  2. application update/draw logic
+  3. `context.flush()`
+  4. exit condition checks
 
 ## 3. Dependency Matrix
-| Module                 | Depends On                   |
-|------------------------|------------------------------|
-| WaylandDisplay         | —                            |
-| WaylandRegistry        | WaylandDisplay              |
-| WaylandContext         | WaylandDisplay, WaylandRegistry |
-| WaylandInputManager    | WaylandRegistry             |
-| WaylandWindow          | WaylandContext              |
-| WindowManager/Factory  | WaylandContext, InputManager|
-| MainLoop               | WaylandContext, WindowManager|
+| Module                 | Depends On                                |
+|------------------------|-------------------------------------------|
+| WaylandDisplay         | —                                         |
+| WaylandRegistry        | WaylandDisplay                            |
+| WaylandContext         | WaylandDisplay, WaylandRegistry           |
+| WaylandInputManager    | WaylandRegistry                           |
+| WaylandWindow          | WaylandContext, WaylandInputManager (opt) |
+| WindowManager          | WaylandContext, WaylandInputManager       |
+| MainLoop               | WaylandContext, WindowManager             |
 
 ## 4. Step-by-Step Refactoring Tasks
 1. **Refactor `WaylandRegistry`** 

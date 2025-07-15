@@ -22,18 +22,16 @@ class WaylandClient
         
         ~WaylandClient() = default;
         
-        wl_compositor* get_compositor() const { return compositor.get(); }
-        wl_subcompositor* get_subcompositor() const { return subcompositor.get(); }
-        xdg_wm_base* get_shell() const { return shell.get(); }
-        wl_shm* get_shm() const { return shm.get(); }
+        wl_compositor* get_compositor() const { return compositor; }
+        wl_subcompositor* get_subcompositor() const { return subcompositor; }
+        xdg_wm_base* get_shell() const { return shell; }
+        wl_shm* get_shm() const { return shm; }
 
         // TODO: should probably be moved to WaylandInputManager
         bool is_keyboard_available() const { return wayland_input_manager->get_keyboard() != nullptr; }
         wl_pointer* get_pointer() const { return wayland_input_manager->get_pointer(); }
         xkb_state* get_state() const { return wayland_input_manager->get_kb_state(); }
         
-        void reset_compositor() { this->compositor.reset(); }
-
         // TODO: have client hold the window registry
         std::shared_ptr<WaylandWindow> create_window(WindowProperties properties)
         {
@@ -59,14 +57,14 @@ class WaylandClient
 
         void initialize();
 
-        WaylandDisplay display;
+        std::unique_ptr<WaylandDisplay> display;
         std::unique_ptr<WaylandRegistry> wayland_registry;
         std::unique_ptr<WaylandInputManager> wayland_input_manager;
 
-        WlUniquePtr<wl_compositor> compositor;
-        WlUniquePtr<wl_subcompositor> subcompositor;
-        WlUniquePtr<xdg_wm_base> shell;
-        WlUniquePtr<wl_shm> shm;
+        wl_compositor* compositor;
+        wl_subcompositor* subcompositor;
+        xdg_wm_base* shell;
+        wl_shm* shm;
 
 };
 

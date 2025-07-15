@@ -13,15 +13,10 @@ namespace tobi_engine
 {
 
     WaylandInputManager::WaylandInputManager(WaylandRegistry& registry)
-     : seat(registry.bind<wl_seat>(4))
+     : seat(registry.get_protocol<wl_seat>())
     {
-        if (!seat) 
-        {
-            LOG_ERROR("Failed to bind wl_seat interface!");
-            throw std::runtime_error("Failed to initialize Wayland Input Manager");
-        }
 
-        wl_seat_add_listener(seat.get(), &seat_listener, this);
+        wl_seat_add_listener(seat, &seat_listener, this);
         LOG_DEBUG("WaylandInputManager initialized with seat");
 
         kb_context = XkbContextPtr(xkb_context_new(XKB_CONTEXT_NO_FLAGS));

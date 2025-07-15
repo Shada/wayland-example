@@ -1,34 +1,68 @@
 #include "wayland_registry.hpp"
 
 #include "utils/logger.hpp"
-#include "wayland_display.hpp"
+#include "wayland_types.hpp"
 
-#include <cstdint>
-#include <stdexcept>
-#include <wayland-client-protocol.h>
-#include <wayland-client.h>
 
 namespace tobi_engine 
 {
 
-WaylandRegistry::WaylandRegistry(WaylandDisplay& display)
-    : registry(WlRegistryPtr(wl_display_get_registry(display.get())))
+WaylandRegistry::WaylandRegistry(wl_display* display)
+    :   WaylandRegistry(
+            display,
+            initialize_registry(display)
+        )
 {
-    initialize();
+}
 
-    if (!display.roundtrip())
+WaylandRegistry::WaylandRegistry(wl_display* display, WlRegistryPtr&& reg)
+    :   registry(std::move(reg))
+{
+    
+    if (!registry) 
+    {
+        LOG_ERROR("Wayland registry is null!");
+        throw std::runtime_error("Failed to initialize Wayland Registry: registry is null");
+    }
+    
+    wl_registry_add_listener(registry.get(), &registry_listener, this);
+
+    // Roundtrip to ensure we receive all global interfaces
+    if (!wl_display_roundtrip(display)) 
     {
         LOG_ERROR("Failed to roundtrip Wayland display during registry initialization!");
         throw std::runtime_error("Failed to initialize Wayland Registry");
     }
+    bind_core_protocols();
 }
 
-void WaylandRegistry::initialize()
+WlRegistryPtr WaylandRegistry::initialize_registry(wl_display* display)
 {
-    if (!registry)
-        throw std::runtime_error("Failed to create Wayland Registry!");
+    if (!display) 
+    {
+        LOG_ERROR("Wayland display is null!");
+        throw std::runtime_error("Failed to get Wayland registry: display is null");
+    }
 
-    wl_registry_add_listener(registry.get(), &registry_listener, this);
+    WlRegistryPtr registry(wl_display_get_registry(display));
+    if (!registry) 
+    {
+        LOG_ERROR("Failed to get Wayland registry from display!");
+        throw std::runtime_error("Failed to get Wayland registry");
+    }
+
+    LOG_DEBUG("Created Wayland registry");
+    
+    return registry;
+}
+
+void WaylandRegistry::bind_core_protocols()
+{
+    bind<wl_compositor>();
+    bind<wl_subcompositor>();
+    bind<xdg_wm_base>();
+    bind<wl_shm>();
+    bind<wl_seat>();
 }
 
 void WaylandRegistry::handle_registry_global_add(void *data, wl_registry *registry, uint32_t name, const char *interface, uint32_t version) noexcept
@@ -43,9 +77,9 @@ void WaylandRegistry::handle_registry_global_remove(void *data, wl_registry *reg
     self->on_registry_global_remove(registry, name);
 }
 
-void WaylandRegistry::on_registry_global_add(wl_registry *registry, uint32_t name, std::string  interface, uint32_t version)
+void WaylandRegistry::on_registry_global_add(wl_registry *registry, uint32_t name, std::string interface, uint32_t version)
 {
-    available_global_interfaces.insert( { interface.data(), {name, version} } );
+    available_global_interfaces.insert( { interface, {name, version} } );
 }
 
 void WaylandRegistry::on_registry_global_remove(wl_registry *registry, uint32_t name) 

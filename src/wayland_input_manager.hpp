@@ -27,7 +27,7 @@ namespace tobi_engine
          * @brief Get the pointer to the Wayland seat.
          * @return Pointer to the Wayland seat.
          */
-        wl_seat* get_seat() const noexcept { return seat.get(); }
+        wl_seat* get_seat() const noexcept { return seat; }
 
         /**
          * @brief Get the pointer to the Wayland pointer device.
@@ -68,7 +68,7 @@ namespace tobi_engine
         
     private:
 
-        WlUniquePtr<wl_seat> seat;
+        wl_seat* seat;
         WlPointerPtr pointer;
         WlKeyboardPtr keyboard;
         XkbContextPtr kb_context;

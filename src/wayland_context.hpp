@@ -22,13 +22,14 @@ public:
     ~WaylandContext();
 
 private:
-    // Private members can be added here
+
     WaylandDisplay display;
     std::unique_ptr<WaylandRegistry> registry;
-    WlUniquePtr<wl_compositor> compositor;
-    WlUniquePtr<wl_subcompositor> subcompositor;
-    WlUniquePtr<xdg_wm_base> shell;
-    WlUniquePtr<wl_shm> shm;
+
+    wl_compositor* compositor;
+    wl_subcompositor* subcompositor;
+    xdg_wm_base* shell;
+    wl_shm* shm;
 };
 
 

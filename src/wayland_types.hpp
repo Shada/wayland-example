@@ -15,33 +15,34 @@ namespace tobi_engine
     template<typename T> struct WaylandInterfaceTraits;
     template<> struct WaylandInterfaceTraits<wl_compositor> 
     { 
-        static constexpr const char* name = "wl_compositor";
+        // The protocol name as advertised by Wayland
+        static constexpr const char* interface_name = "wl_compositor";
         static constexpr const wl_interface* interface = &wl_compositor_interface;
         static constexpr uint32_t version = 6;
     };
     template<> struct WaylandInterfaceTraits<wl_subcompositor> 
     { 
-        static constexpr const char* name = "wl_subcompositor";
+        static constexpr const char* interface_name = "wl_subcompositor";
         static constexpr const wl_interface* interface = &wl_subcompositor_interface;
         static constexpr uint32_t version = 1;
     };
     template<> struct WaylandInterfaceTraits<wl_shm>
     { 
-        static constexpr const char* name = "wl_shm";
+        static constexpr const char* interface_name = "wl_shm";
         static constexpr const wl_interface* interface = &wl_shm_interface;
         static constexpr uint32_t version = 2;
     };
     template<> struct WaylandInterfaceTraits<xdg_wm_base>
     { 
-        static constexpr const char* name = "xdg_wm_base";
+        static constexpr const char* interface_name = "xdg_wm_base";
         static constexpr const wl_interface* interface = &xdg_wm_base_interface;
         static constexpr uint32_t version = 6;
     };
     template<> struct WaylandInterfaceTraits<wl_seat>
     { 
-        static constexpr const char* name = "wl_seat";
+        static constexpr const char* interface_name = "wl_seat";
         static constexpr const wl_interface* interface = &wl_seat_interface;
-        static constexpr uint32_t version = 7;
+        static constexpr uint32_t version = 4; // only supporting version 4 for now
     };
 
     // Templated unique pointer deleters for Wayland proxy objects
@@ -59,6 +60,15 @@ namespace tobi_engine
     
     template<typename T>
     using WlUniquePtr = std::unique_ptr<T, WlDeleter<T>>;
+
+    using CoreProtocols =
+        std::tuple<
+            WlUniquePtr<wl_compositor>,
+            WlUniquePtr<wl_subcompositor>,
+            WlUniquePtr<wl_shm>,
+            WlUniquePtr<xdg_wm_base>,
+            WlUniquePtr<wl_seat>
+        >;
 
     using WlCompositorPtr = WlUniquePtr<wl_compositor>;
     using WlSubCompositorPtr = WlUniquePtr<wl_subcompositor>;
