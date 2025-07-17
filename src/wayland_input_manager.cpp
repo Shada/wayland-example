@@ -13,9 +13,18 @@ namespace tobi_engine
 {
 
     WaylandInputManager::WaylandInputManager(WaylandRegistry& registry)
-     : seat(registry.get_protocol<wl_seat>())
-    {
-
+    {   
+        auto seat = registry.get_seat().value_or(nullptr);
+        if (!seat)
+        {
+            throw std::runtime_error("Failed to get Wayland seat from registry");
+        }
+        
+        constexpr wl_seat_listener seat_listener
+        {
+            &WaylandInputManager::seat_capabilities,
+            &WaylandInputManager::seat_name
+        };
         wl_seat_add_listener(seat, &seat_listener, this);
         LOG_DEBUG("WaylandInputManager initialized with seat");
 
@@ -35,6 +44,15 @@ namespace tobi_engine
         {
             if (!pointer) 
             {
+                constexpr wl_pointer_listener pointer_listener = 
+                {
+                    &WaylandInputManager::pointer_enter,
+                    &WaylandInputManager::pointer_leave,
+                    &WaylandInputManager::pointer_motion,
+                    &WaylandInputManager::pointer_button,
+                    &WaylandInputManager::pointer_axis,
+                };
+
                 pointer = WlPointerPtr(wl_seat_get_pointer(seat));
                 wl_pointer_add_listener(pointer.get(), &pointer_listener, this);
                 LOG_DEBUG("Pointer device added");
@@ -50,6 +68,16 @@ namespace tobi_engine
         {
             if (!keyboard) 
             {
+
+                constexpr wl_keyboard_listener keyboard_listener = 
+                {
+                    &WaylandInputManager::keyboard_map,
+                    &WaylandInputManager::keyboard_enter,
+                    &WaylandInputManager::keyboard_leave,
+                    &WaylandInputManager::keyboard_key,
+                    &WaylandInputManager::keyboard_modifiers,
+                    &WaylandInputManager::keyboard_repeat
+                };
                 keyboard = WlKeyboardPtr(wl_seat_get_keyboard(seat));
                 wl_keyboard_add_listener(keyboard.get(), &keyboard_listener, this);
                 LOG_DEBUG("Keyboard device added");

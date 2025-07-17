@@ -23,13 +23,9 @@ public:
 
 private:
 
-    WaylandDisplay display;
+    std::unique_ptr<WaylandDisplay> display;
     std::unique_ptr<WaylandRegistry> registry;
 
-    wl_compositor* compositor;
-    wl_subcompositor* subcompositor;
-    xdg_wm_base* shell;
-    wl_shm* shm;
 };
 
 

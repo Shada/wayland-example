@@ -147,6 +147,12 @@ void WaylandWindow::initialize()
 {
     auto & client = WaylandClient::get_instance();
     cursor = std::make_unique<WaylandCursor>();
+    auto shell = client.get_shell().value_or(nullptr);
+    if (!shell)
+    {
+        LOG_ERROR("Failed to get shell");
+        return;
+    }
     if(is_decorated)
     {
         surfaces.push_back(std::make_unique<DecorationSurface>(this->properties.width, this->properties.height));
@@ -155,7 +161,8 @@ void WaylandWindow::initialize()
         set_callback(wl_surface_frame(surfaces[0]->get_surface()));
         wl_callback_add_listener(callback.get(), &surface_ready_callback_listener, this);
 
-        x_surface.reset(xdg_wm_base_get_xdg_surface(client.get_shell(), surfaces[0]->get_surface()));
+
+        x_surface.reset(xdg_wm_base_get_xdg_surface(shell, surfaces[0]->get_surface()));
         xdg_surface_add_listener(x_surface.get(), &xdg_surface_listener, this);
 
         wl_surface_set_user_data(surfaces[0]->get_surface(), this);
@@ -168,7 +175,7 @@ void WaylandWindow::initialize()
         set_callback(wl_surface_frame(surfaces.back()->get_surface()));
         wl_callback_add_listener(callback.get(), &surface_ready_callback_listener, this);
 
-        x_surface.reset(xdg_wm_base_get_xdg_surface(client.get_shell(), surfaces.back()->get_surface()));
+        x_surface.reset(xdg_wm_base_get_xdg_surface(shell, surfaces.back()->get_surface()));
         xdg_surface_add_listener(x_surface.get(), &xdg_surface_listener, this);
 
         wl_surface_set_user_data(surfaces.back()->get_surface(), this);

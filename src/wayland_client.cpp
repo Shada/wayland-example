@@ -34,16 +34,10 @@ namespace tobi_engine
 
     WaylandClient::WaylandClient()
         :   display(std::make_unique<WaylandDisplay>()), 
-            wayland_registry(std::make_unique<WaylandRegistry>(display->get()))
+            wayland_registry(std::make_unique<WaylandRegistry>(display->get())),
+            wayland_input_manager(std::make_unique<WaylandInputManager>(*wayland_registry))
     {
         LOG_DEBUG("Constructing CLient");
-        compositor = wayland_registry->get_protocol<wl_compositor>();
-        subcompositor = wayland_registry->get_protocol<wl_subcompositor>();
-        shm = wayland_registry->get_protocol<wl_shm>();
-        shell = wayland_registry->get_protocol<xdg_wm_base>();
-        xdg_wm_base_add_listener(shell, &shell_listener, this);
-
-        wayland_input_manager = std::make_unique<WaylandInputManager>(*wayland_registry);
         initialize();
     }
 
@@ -94,6 +88,22 @@ namespace tobi_engine
     void WaylandClient::initialize()
     {
         LOG_DEBUG("initilizing Wayland Client");
+        
+        subcompositor = wayland_registry->get_subcompositor().value_or(nullptr);
+        shm = wayland_registry->get_shm().value_or(nullptr);
+        shell = wayland_registry->get_shell().value_or(nullptr);
+        if (!subcompositor || !shm || !shell) 
+        {
+            LOG_ERROR("Failed to bind required Wayland interfaces!");
+            throw std::runtime_error("Failed to initialize Wayland Client");
+        }
+        
+        constexpr xdg_wm_base_listener shell_listener
+        {
+            &WaylandClient::shell_ping
+        };
+        xdg_wm_base_add_listener(shell, &shell_listener, this);
+
     }
     
 }

@@ -3,10 +3,12 @@
 #include "wayland_types.hpp"
 #include "utils/logger.hpp"
 
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <cstdint>
+#include <variant>
 #include <wayland-client-protocol.h>
 #include <wayland-util.h>
 #include <format>
@@ -49,14 +51,26 @@ namespace tobi_engine
         WaylandRegistry& operator=(WaylandRegistry&&) = default;
         ~WaylandRegistry() noexcept = default;
 
-        /**
-         * @brief Get the Wayland protocol interface pointer.
-         * @return Pointer to the Wayland interface.
-         */
-        template <typename Protocol>
-        Protocol* get_protocol() const noexcept
+
+        std::optional<wl_compositor*> get_compositor() const noexcept
         {
-            return std::get<WlUniquePtr<Protocol>>(global_protocols).get();
+            return get_protocol<wl_compositor>();
+        }
+        std::optional<wl_subcompositor*> get_subcompositor() const noexcept
+        {
+            return get_protocol<wl_subcompositor>();
+        }
+        std::optional<xdg_wm_base*> get_shell() const noexcept
+        {
+            return get_protocol<xdg_wm_base>();
+        }
+        std::optional<wl_shm*> get_shm() const noexcept
+        {
+            return get_protocol<wl_shm>();
+        }
+        std::optional<wl_seat*> get_seat() const noexcept
+        {
+            return get_protocol<wl_seat>();
         }
 
     private:
@@ -83,6 +97,24 @@ namespace tobi_engine
          */
         void bind_core_protocols();
 
+
+        /**
+         * @brief Get the Wayland protocol interface pointer.
+         * @return Pointer to the Wayland interface.
+         */
+        template <typename Protocol>
+        std::optional<Protocol*> get_protocol() const noexcept
+        {
+            try 
+            {
+                return std::make_optional(std::get<WlUniquePtr<Protocol>>(global_protocols).get());
+            } 
+            catch (std::bad_variant_access const& exception)
+            {
+                return std::nullopt;
+            }
+        }
+        
         /**
          * @brief C callback: called when a global is added to the registry.
          */
@@ -142,13 +174,14 @@ namespace tobi_engine
                             required_version, WaylandInterfaceTraits<Protocol>::interface_name, it->second.version);
                 required_version = it->second.version;
             }
-            
+
             Protocol *proxy = static_cast<Protocol*>(
                 wl_registry_bind(
                     registry.get(),
                     it->second.name,
                     WaylandInterfaceTraits<Protocol>::interface, 
                     required_version));
+
 
             // Record the bound interface name by global id
             registered_global_interfaces[it->second.name] = WaylandInterfaceTraits<Protocol>::interface_name;

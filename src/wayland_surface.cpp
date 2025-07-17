@@ -19,7 +19,7 @@ namespace tobi_engine
         LOG_DEBUG("Width: {}, heigth: {}", width, height);
 
         buffer = std::make_unique<SurfaceBuffer>(width, height);
-        surface = WlSurfacePtr(wl_compositor_create_surface(client.get_compositor()));
+        surface = WlSurfacePtr(wl_compositor_create_surface(client.get_compositor().value_or(nullptr)));
         create_subsurface(parent);
 
         wl_surface_attach(surface.get(), buffer->get_buffer(), 0, 0);
@@ -32,7 +32,14 @@ namespace tobi_engine
             return;
         auto &client = WaylandClient::get_instance();
 
-        subsurface = WlSubSurfacePtr(wl_subcompositor_get_subsurface(client.get_subcompositor(), surface.get(), parent->get_surface()));
+        auto subcompositor = client.get_subcompositor().value_or(nullptr);
+        if (!subcompositor)
+        {
+            LOG_ERROR("Failed to get Wayland subcompositor");
+            throw std::runtime_error("Failed to get Wayland subcompositor");
+        }
+
+        subsurface = WlSubSurfacePtr(wl_subcompositor_get_subsurface(subcompositor, surface.get(), parent->get_surface()));
         wl_subsurface_set_desync(subsurface.get());
         wl_subsurface_set_position(subsurface.get(), DECORATIONS_BORDER_SIZE, DECORATIONS_TOPBAR_SIZE);
     }

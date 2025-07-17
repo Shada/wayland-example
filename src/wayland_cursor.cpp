@@ -79,21 +79,30 @@ namespace tobi_engine
         current_theme_name = get_cursor_theme_from_env().value_or(DEFAULT_CURSOR_THEME);
         LOG_DEBUG("Cursor theme set to: {}", current_theme_name);
         
-        theme = WlCursorThemePtr(wl_cursor_theme_load(current_theme_name.c_str(), cursor_size, client.get_shm()));
+        auto shm = client.get_shm().value_or(nullptr);
+        if (!shm)
+        {
+            LOG_ERROR("Failed to get Wayland SHM");
+            throw std::runtime_error("Failed to get Wayland SHM");
+        }
+        theme = WlCursorThemePtr(wl_cursor_theme_load(current_theme_name.c_str(), cursor_size, shm));
         if (!theme) 
             throw std::runtime_error("Failed to load Wayland cursor theme " + current_theme_name);
 
-        surface = WlSurfacePtr(wl_compositor_create_surface(client.get_compositor()));
+        auto compositor = client.get_compositor().value_or(nullptr);
+        if (!compositor)
+        {
+            LOG_ERROR("Failed to get Wayland compositor");
+            throw std::runtime_error("Failed to get Wayland compositor");
+        }
+        surface = WlSurfacePtr(wl_compositor_create_surface(compositor));
         if(!surface)
             throw std::runtime_error("Failed to create Wayland cursor surface");
-       
     }
 
     void WaylandCursor::draw()
     {
         auto& client = WaylandClient::get_instance();
-        if(!client.get_pointer())
-            return;
 
         wl_cursor *cursor;
         if(cursors.contains(current_cursor_name))
@@ -124,7 +133,7 @@ namespace tobi_engine
         }
 
         wl_pointer_set_cursor(
-            client.get_pointer(),
+            &client.get_pointer(),
             0, // Serial number, can be 0 for static cursors
             surface.get(),
             image->hotspot_x,
