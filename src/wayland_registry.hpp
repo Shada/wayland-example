@@ -74,9 +74,7 @@ namespace tobi_engine
         }
 
     private:
-        /**
-         * @brief Unavailable default constructor.
-         */
+    
         WaylandRegistry() = delete;
         /**
          * @brief Private delegating constructor.
@@ -92,11 +90,7 @@ namespace tobi_engine
          */
         static WlRegistryPtr initialize_registry(wl_display* display);
 
-        /**
-         * @brief Bind all core Wayland protocols needed by the engine.
-         */
         void bind_core_protocols();
-
 
         /**
          * @brief Get the Wayland protocol interface pointer.
@@ -114,7 +108,7 @@ namespace tobi_engine
                 return std::nullopt;
             }
         }
-        
+
         /**
          * @brief C callback: called when a global is added to the registry.
          */
@@ -148,57 +142,23 @@ namespace tobi_engine
         void on_registry_global_remove(wl_registry *registry,
                                        uint32_t name);
 
-        
         /**
          * @brief Bind a Wayland interface by its traits.
          * @tparam Protocol The protocol type to bind.
          * @param required_version The version of the protocol to bind.
          * @throws std::runtime_error if the interface is not registered.
          */
-        template<typename Protocol>
-        void bind(uint32_t required_version = WaylandInterfaceTraits<Protocol>::version)
+        template<typename WaylandInterface>
+        void register_interface(uint32_t required_version = WaylandInterfaceTraits<WaylandInterface>::version)
         {
-            // Look up by the protocol's advertised interface name
-            auto it = available_global_interfaces.find(WaylandInterfaceTraits<Protocol>::interface_name);
-            if (it == available_global_interfaces.end()) 
-            {
-                LOG_WARNING("Interface {} is not registered in the Wayland registry!", WaylandInterfaceTraits<Protocol>::interface_name);
-                throw std::runtime_error(
-                    std::format("Failed to bind Wayland interface: {}", WaylandInterfaceTraits<Protocol>::interface_name)
-                );
-            }
+            auto proxy = reinterpret_cast<WaylandInterface*>(bind_wayland_interface(WaylandInterfaceTraits<WaylandInterface>::interface_name,
+                  WaylandInterfaceTraits<WaylandInterface>::interface,
+                  required_version));
 
-            if (required_version > it->second.version) 
-            {
-                LOG_WARNING("Requested version {} for interface {} is higher than available version {}. Using available version.",
-                            required_version, WaylandInterfaceTraits<Protocol>::interface_name, it->second.version);
-                required_version = it->second.version;
-            }
-
-            Protocol *proxy = static_cast<Protocol*>(
-                wl_registry_bind(
-                    registry.get(),
-                    it->second.name,
-                    WaylandInterfaceTraits<Protocol>::interface, 
-                    required_version));
-
-
-            // Record the bound interface name by global id
-            registered_global_interfaces[it->second.name] = WaylandInterfaceTraits<Protocol>::interface_name;
-
-            bind_global<Protocol>(proxy);
+            std::get<WlUniquePtr<WaylandInterface>>(global_protocols).reset(proxy);
         }
 
-        /**
-         * @brief Bind a global protocol to the registry.
-         * @tparam Protocol The protocol type to bind.
-         * @param proxy The protocol proxy to bind.
-         */
-        template<typename Protocol>
-        void bind_global(Protocol* proxy) noexcept
-        {
-            std::get<WlUniquePtr<Protocol>>(global_protocols).reset(proxy);
-        }
+        wl_proxy* bind_wayland_interface(const std::string& interface_name, const wl_interface* interface, uint32_t version);
 
         WlRegistryPtr registry;
         CoreProtocols global_protocols{};

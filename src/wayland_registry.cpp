@@ -58,11 +58,41 @@ WlRegistryPtr WaylandRegistry::initialize_registry(wl_display* display)
 
 void WaylandRegistry::bind_core_protocols()
 {
-    bind<wl_compositor>();
-    bind<wl_subcompositor>();
-    bind<xdg_wm_base>();
-    bind<wl_shm>();
-    bind<wl_seat>();
+    register_interface<wl_compositor>();
+    register_interface<wl_subcompositor>();
+    register_interface<xdg_wm_base>();
+    register_interface<wl_shm>();
+    register_interface<wl_seat>();
+}
+
+wl_proxy* WaylandRegistry::bind_wayland_interface(const std::string& interface_name, const wl_interface* interface, uint32_t version)
+{
+    if (!available_global_interfaces.contains(interface_name)) 
+    {
+        LOG_ERROR("Wayland interface {} is not available", interface_name);
+        throw std::runtime_error(std::format("Wayland interface {} is not available", interface_name));
+    }
+
+    auto wayland_interface_data = available_global_interfaces[interface_name];
+
+    if (version > wayland_interface_data.version) 
+    {
+        LOG_WARNING("Requested version {} for interface {} is higher than available version {}. Using available version.",
+                    version, interface_name, wayland_interface_data.version);
+        version = wayland_interface_data.version;
+    }
+
+    auto proxy = static_cast<wl_proxy*>(
+        wl_registry_bind(
+            registry.get(),
+            wayland_interface_data.name,
+            interface,
+            version));
+
+    LOG_DEBUG("Bound Wayland interface: {} (version {})", interface_name, version);
+    registered_global_interfaces[wayland_interface_data.name] = interface_name;
+
+    return proxy;
 }
 
 void WaylandRegistry::handle_registry_global_add(void *data, wl_registry *registry, uint32_t name, const char *interface, uint32_t version) noexcept
