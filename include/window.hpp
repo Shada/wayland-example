@@ -39,6 +39,4 @@ namespace tobi_engine
         virtual void initialize() = 0;
         
     };
-    std::shared_ptr<Window> create_window(const WindowProperties &properties);
-    
 }

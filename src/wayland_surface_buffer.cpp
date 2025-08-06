@@ -106,7 +106,7 @@ namespace tobi_engine
     void SurfaceBuffer::create_buffer()
     {
         auto &client = WaylandClient::get_instance();
-        auto shm = client.get_shm().value_or(nullptr);
+        auto shm = client.get_shm();
         if (!shm)
         {
             throw std::runtime_error("Failed to get Wayland SHM");

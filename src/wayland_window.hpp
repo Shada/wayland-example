@@ -76,7 +76,7 @@ class WaylandWindow : public Window
 
         std::vector<WaylandSurfacePtr> surfaces;
 
-        WlCallbackPtr         callback;
+        WlCallbackPtr       callback;
         XdgSurfacePtr       x_surface;
         XdgToplevelPtr      x_toplevel;
 

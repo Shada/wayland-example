@@ -8,7 +8,6 @@
 
 namespace tobi_engine
 {
-    
     WindowRegistry& WindowRegistry::get_instance()
     {
         static WindowRegistry instance;
@@ -17,7 +16,7 @@ namespace tobi_engine
 
     std::shared_ptr<Window> WindowRegistry::create_window(WindowProperties properties)
     {
-        auto window = WaylandClient::get_instance().create_window(properties);
+        auto window = std::make_shared<WaylandWindow>(properties);
         windows[window->get_uid()] = window;
         
         return window;

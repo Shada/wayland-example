@@ -4,6 +4,7 @@
 
 #include "wayland_window.hpp"
 #include "utils/utils.hpp"
+#include "utils/logger.hpp"
 
 namespace tobi_engine
 {
@@ -12,11 +13,7 @@ namespace tobi_engine
         :   properties(properties), 
             uid(generate_uid()) 
     {
-
+        LOG_DEBUG("Window created with UID: {}", uid);
     }
 
-    std::shared_ptr<Window> create_window(const WindowProperties &properties)
-    {
-        return std::make_shared<WaylandWindow>(properties);
-    }
 }
