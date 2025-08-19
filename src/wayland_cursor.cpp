@@ -79,7 +79,7 @@ namespace tobi_engine
         current_theme_name = get_cursor_theme_from_env().value_or(DEFAULT_CURSOR_THEME);
         LOG_DEBUG("Cursor theme set to: {}", current_theme_name);
         
-        auto shm = client.get_shm().value_or(nullptr);
+        auto shm = client.get_shm();
         if (!shm)
         {
             LOG_ERROR("Failed to get Wayland SHM");
@@ -89,7 +89,7 @@ namespace tobi_engine
         if (!theme) 
             throw std::runtime_error("Failed to load Wayland cursor theme " + current_theme_name);
 
-        auto compositor = client.get_compositor().value_or(nullptr);
+        auto compositor = client.get_compositor();
         if (!compositor)
         {
             LOG_ERROR("Failed to get Wayland compositor");
@@ -132,8 +132,10 @@ namespace tobi_engine
             return;
         }
 
+        auto input_manager = client.get_input_manager();
+
         wl_pointer_set_cursor(
-            &client.get_pointer(),
+            input_manager->get_pointer(),
             0, // Serial number, can be 0 for static cursors
             surface.get(),
             image->hotspot_x,

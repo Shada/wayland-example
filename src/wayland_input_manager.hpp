@@ -16,7 +16,7 @@ namespace tobi_engine
     class WaylandInputManager
     {
     public:
-        explicit WaylandInputManager(WaylandRegistry& registry);
+        explicit WaylandInputManager(const WaylandRegistry* registry);
         WaylandInputManager() = delete;
         ~WaylandInputManager() = default;
         WaylandInputManager(const WaylandInputManager&) = delete;
@@ -28,27 +28,27 @@ namespace tobi_engine
          * @brief Get the pointer to the Wayland pointer device.
          * @return Pointer to the Wayland pointer device, or nullptr if not available.
          */
-        auto &get_pointer() const noexcept { return *pointer; }
+        auto get_pointer() const noexcept { return pointer.get(); }
         /**
          * @brief Get the pointer to the Wayland keyboard device.
          * @return Pointer to the Wayland keyboard device, or nullptr if not available.
          */
-        wl_keyboard* get_keyboard() const noexcept { return keyboard.get(); }
+        auto get_keyboard() const noexcept { return keyboard.get(); }
         /**
          * @brief Get the XKB context.
          * @return Pointer to the XKB context.
          */
-        xkb_context* get_xkb_context() const noexcept { return kb_context.get(); }
+        auto get_xkb_context() const noexcept { return kb_context.get(); }
         /**
          * @brief Get the XKB keymap.
          * @return Pointer to the XKB keymap, or nullptr if not available.
          */
-        xkb_keymap* get_keymap() const noexcept { return kb_keymap.get(); }
+        auto get_keymap() const noexcept { return kb_keymap.get(); }
         /**
          * @brief Get the XKB state.
          * @return Pointer to the XKB state, or nullptr if not available.
          */
-        xkb_state* get_kb_state() const noexcept { return kb_state.get(); }
+        auto get_kb_state() const noexcept { return kb_state.get(); }
 
         /**
          * @brief Set the XKB keymap.

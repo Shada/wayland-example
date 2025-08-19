@@ -35,20 +35,21 @@ namespace tobi_engine
     WaylandClient::WaylandClient()
         :   display(std::make_unique<WaylandDisplay>()), 
             wayland_registry(std::make_unique<WaylandRegistry>(display->get())),
-            wayland_input_manager(std::make_unique<WaylandInputManager>(*wayland_registry))
+            wayland_input_manager(std::make_unique<WaylandInputManager>(wayland_registry.get()))
     {
-        LOG_DEBUG("Constructing CLient");
+        LOG_DEBUG("Constructing Client");
         initialize();
     }
 
     void WaylandClient::shell_ping(void *data, xdg_wm_base *shell, uint32_t serial) 
     {
-        auto client = static_cast<WaylandClient*>(data);
-        client->on_shell_ping(shell, serial);
-    }
-
-    void WaylandClient::on_shell_ping(xdg_wm_base *shell, uint32_t serial) 
-    {
+        LOG_DEBUG("shell_ping()");
+        auto self = static_cast<WaylandClient*>(data);
+        if (!self)
+        {
+            LOG_ERROR("WaylandClient instance is null in shell_ping");
+            return;
+        }
         xdg_wm_base_pong(shell, serial);
     }
 
@@ -76,6 +77,7 @@ namespace tobi_engine
         }
         return true;
     }
+
     void WaylandClient::clear()
     {
         display->dispatch_pending();
@@ -89,21 +91,44 @@ namespace tobi_engine
     {
         LOG_DEBUG("initilizing Wayland Client");
         
-        subcompositor = wayland_registry->get_subcompositor().value_or(nullptr);
-        shm = wayland_registry->get_shm().value_or(nullptr);
-        shell = wayland_registry->get_shell().value_or(nullptr);
-        if (!subcompositor || !shm || !shell) 
+        if(auto shell = wayland_registry->get_shell(); shell)
         {
-            LOG_ERROR("Failed to bind required Wayland interfaces!");
+            LOG_DEBUG("Wayland shell is available");
+        
+            static constexpr xdg_wm_base_listener shell_listener
+            {
+                &WaylandClient::shell_ping
+            };
+            xdg_wm_base_add_listener(shell, &shell_listener, this);
+        }
+        else
+        {
+            LOG_ERROR("Wayland shell is not available");
             throw std::runtime_error("Failed to initialize Wayland Client");
         }
-        
-        constexpr xdg_wm_base_listener shell_listener
-        {
-            &WaylandClient::shell_ping
-        };
-        xdg_wm_base_add_listener(shell, &shell_listener, this);
 
     }
-    
-}
+
+    auto WaylandClient::get_compositor() -> wl_compositor* const
+    {
+        return wayland_registry->get_compositor();
+    }
+
+    auto WaylandClient::get_subcompositor() -> wl_subcompositor* const
+    {
+        return wayland_registry->get_subcompositor();
+    }
+    auto WaylandClient::get_shell() -> xdg_wm_base* const
+    {
+      return wayland_registry->get_shell();
+    }
+    auto WaylandClient::get_shm() -> wl_shm* const
+    {
+        return wayland_registry->get_shm();
+    }
+    auto WaylandClient::get_input_manager() -> WaylandInputManager* 
+    {
+        return wayland_input_manager.get();
+    }
+
+} // namespace tobi_engine

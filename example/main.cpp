@@ -1,8 +1,9 @@
 #include <cstddef>
 #include <cstdint>
-#include <memory>
+#include <cstdio>
 
 #include "window_registry.hpp"
+
 
 int main() {
     // Initialize Wayland display

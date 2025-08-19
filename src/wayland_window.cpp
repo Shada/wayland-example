@@ -147,7 +147,12 @@ void WaylandWindow::initialize()
 {
     auto & client = WaylandClient::get_instance();
     cursor = std::make_unique<WaylandCursor>();
-    auto shell = client.get_shell().value_or(nullptr);
+    if (!cursor)
+    {
+        LOG_ERROR("Failed to create Wayland cursor");
+        throw std::runtime_error("Failed to create Wayland cursor");
+    }
+    auto shell = client.get_shell();
     if (!shell)
     {
         LOG_ERROR("Failed to get shell");
@@ -205,15 +210,16 @@ void WaylandWindow::update()
 void WaylandWindow::on_key(uint32_t key, uint32_t state)
 {
     auto & client = WaylandClient::get_instance();
+    auto input_manager = client.get_input_manager();
     char buf[128];
-    xkb_keysym_t sym = xkb_state_key_get_one_sym(client.get_state(), key);
+    xkb_keysym_t sym = xkb_state_key_get_one_sym(input_manager->get_kb_state(), key);
     xkb_keysym_get_name(sym, buf, sizeof(buf));
 
     const char *action =
             state == WL_KEYBOARD_KEY_STATE_PRESSED ? "press" : "release";
     LOG_DEBUG("key {}: sym: {} ({})", action, buf, sym);
 
-    xkb_state_key_get_utf8(client.get_state(), key,
+    xkb_state_key_get_utf8(input_manager->get_kb_state(), key,
                         buf, sizeof(buf));
     if(buf[0] > 32)
     {

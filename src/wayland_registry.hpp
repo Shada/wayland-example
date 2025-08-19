@@ -52,25 +52,25 @@ namespace tobi_engine
         ~WaylandRegistry() noexcept = default;
 
 
-        std::optional<wl_compositor*> get_compositor() const noexcept
+        wl_compositor* get_compositor() const noexcept
         {
-            return get_protocol<wl_compositor>();
+            return get_interface<wl_compositor>();
         }
-        std::optional<wl_subcompositor*> get_subcompositor() const noexcept
+        wl_subcompositor* get_subcompositor() const noexcept
         {
-            return get_protocol<wl_subcompositor>();
+            return get_interface<wl_subcompositor>();
         }
-        std::optional<xdg_wm_base*> get_shell() const noexcept
+        xdg_wm_base* get_shell() const noexcept
         {
-            return get_protocol<xdg_wm_base>();
+            return get_interface<xdg_wm_base>();
         }
-        std::optional<wl_shm*> get_shm() const noexcept
+        wl_shm* get_shm() const noexcept
         {
-            return get_protocol<wl_shm>();
+            return get_interface<wl_shm>();
         }
-        std::optional<wl_seat*> get_seat() const noexcept
+        wl_seat* get_seat() const noexcept
         {
-            return get_protocol<wl_seat>();
+            return get_interface<wl_seat>();
         }
 
     private:
@@ -96,16 +96,17 @@ namespace tobi_engine
          * @brief Get the Wayland protocol interface pointer.
          * @return Pointer to the Wayland interface.
          */
-        template <typename Protocol>
-        std::optional<Protocol*> get_protocol() const noexcept
+        template <typename T>
+        T* get_interface() const noexcept
         {
             try 
             {
-                return std::make_optional(std::get<WlUniquePtr<Protocol>>(global_protocols).get());
+                return std::get<WlUniquePtr<T>>(global_protocols).get();
             } 
             catch (std::bad_variant_access const& exception)
             {
-                return std::nullopt;
+                LOG_ERROR("Wayland interface not supported: {}", exception.what());
+                return nullptr;
             }
         }
 

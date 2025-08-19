@@ -7,6 +7,7 @@
 #include "wayland_registry.hpp"
 #include <memory>
 #include <optional>
+#include <wayland-client-protocol.h>
 
 namespace tobi_engine
 {
@@ -22,23 +23,14 @@ class WaylandClient
         }
         
         ~WaylandClient() = default;
-        
-        std::optional<wl_compositor*> get_compositor() const { return wayland_registry->get_compositor(); }
-        std::optional<wl_subcompositor*> get_subcompositor() const { return wayland_registry->get_subcompositor(); }
-        std::optional<xdg_wm_base*> get_shell() const { return wayland_registry->get_shell(); }
-        std::optional<wl_shm*> get_shm() const { return wayland_registry->get_shm(); }
 
-        // TODO: should probably be moved to WaylandInputManager
-        bool is_keyboard_available() const { return wayland_input_manager->get_keyboard() != nullptr; }
-        wl_pointer& get_pointer() const { return wayland_input_manager->get_pointer(); }
-        xkb_state* get_state() const { return wayland_input_manager->get_kb_state(); }
-        
-        // TODO: have client hold the window registry
-        std::shared_ptr<WaylandWindow> create_window(WindowProperties properties)
-        {
-            return std::make_shared<WaylandWindow>(properties);
-        }
-        
+        auto get_compositor() -> wl_compositor* const;
+        auto get_subcompositor() -> wl_subcompositor* const;
+        auto get_shell() -> xdg_wm_base* const;
+        auto get_shm() -> wl_shm* const;
+
+        auto get_input_manager() -> WaylandInputManager*;
+
         bool flush();
         bool update();
         void clear();
@@ -48,16 +40,11 @@ class WaylandClient
 
         static void shell_ping(void *data, xdg_wm_base *shell, uint32_t serial);
 
-        void on_shell_ping(xdg_wm_base *shell, uint32_t serial);
         void initialize();
 
         std::unique_ptr<WaylandDisplay> display;
         std::unique_ptr<WaylandRegistry> wayland_registry;
         std::unique_ptr<WaylandInputManager> wayland_input_manager;
-
-        wl_subcompositor* subcompositor;
-        xdg_wm_base* shell;
-        wl_shm* shm;
 
 };
 

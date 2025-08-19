@@ -9,18 +9,20 @@
 #include <unistd.h>
 #include <wayland-client-protocol.h>
 
+#include <expected>
+
 namespace tobi_engine
 {
 
-    WaylandInputManager::WaylandInputManager(WaylandRegistry& registry)
+    WaylandInputManager::WaylandInputManager(const WaylandRegistry* registry)
     {   
-        auto seat = registry.get_seat().value_or(nullptr);
+        auto seat = registry->get_seat();
         if (!seat)
         {
             throw std::runtime_error("Failed to get Wayland seat from registry");
         }
         
-        constexpr wl_seat_listener seat_listener
+        static constexpr wl_seat_listener seat_listener
         {
             &WaylandInputManager::seat_capabilities,
             &WaylandInputManager::seat_name
@@ -44,7 +46,7 @@ namespace tobi_engine
         {
             if (!pointer) 
             {
-                constexpr wl_pointer_listener pointer_listener = 
+                static constexpr wl_pointer_listener pointer_listener = 
                 {
                     &WaylandInputManager::pointer_enter,
                     &WaylandInputManager::pointer_leave,
@@ -69,7 +71,7 @@ namespace tobi_engine
             if (!keyboard) 
             {
 
-                constexpr wl_keyboard_listener keyboard_listener = 
+                static constexpr wl_keyboard_listener keyboard_listener = 
                 {
                     &WaylandInputManager::keyboard_map,
                     &WaylandInputManager::keyboard_enter,
@@ -112,7 +114,6 @@ namespace tobi_engine
             LOG_DEBUG("Seat name is empty or null");
         }
     }
-
 
     void WaylandInputManager::pointer_enter(void *data, wl_pointer* pointer, uint32_t serial, wl_surface *surface, wl_fixed_t x, wl_fixed_t y)
     {
@@ -236,8 +237,7 @@ namespace tobi_engine
     void WaylandInputManager::keyboard_modifiers(void *data, struct wl_keyboard* keyboard, uint32_t serial, uint32_t depressed, uint32_t latched, uint32_t locked, uint32_t group) 
     {
         LOG_DEBUG("keyboard_modifiers()");
-        auto self =static_cast<WaylandInputManager*>(data);
-
+        auto self = static_cast<const WaylandInputManager*>(data);
 
        xkb_state_update_mask(self->get_kb_state(),
                depressed, latched, locked, 0, 0, group);
