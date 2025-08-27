@@ -2,6 +2,7 @@
 #include "utils/logger.hpp"
 #include "wayland_client.hpp"
 #include "wayland_types.hpp"
+
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -11,15 +12,13 @@
 namespace tobi_engine
 {
 
-    WaylandSurface::WaylandSurface(uint32_t width, uint32_t height, const WaylandSurface *parent)
-        : width(width), height(height)
+    WaylandSurface::WaylandSurface(uint32_t width, uint32_t height, WaylandClient *client, const WaylandSurface *parent)
+        : width(width), height(height), client(client)
     {
-        auto &client = WaylandClient::get_instance();
-
         LOG_DEBUG("Width: {}, heigth: {}", width, height);
 
-        buffer = std::make_unique<SurfaceBuffer>(width, height);
-        surface = WlSurfacePtr(wl_compositor_create_surface(client.get_compositor()));
+        buffer = std::make_unique<SurfaceBuffer>(width, height, client);
+        surface = WlSurfacePtr(wl_compositor_create_surface(client->get_compositor()));
         create_subsurface(parent);
 
         wl_surface_attach(surface.get(), buffer->get_buffer(), 0, 0);
@@ -30,9 +29,8 @@ namespace tobi_engine
     {
         if(!parent)
             return;
-        auto &client = WaylandClient::get_instance();
 
-        auto subcompositor = client.get_subcompositor();
+        auto subcompositor = client->get_subcompositor();
         if (!subcompositor)
         {
             LOG_ERROR("Failed to get Wayland subcompositor");
@@ -66,10 +64,10 @@ namespace tobi_engine
 
 
 
-    DecorationSurface::DecorationSurface(uint32_t width, uint32_t height, const WaylandSurface *parent)
+    DecorationSurface::DecorationSurface(uint32_t width, uint32_t height, WaylandClient *client, const WaylandSurface *parent)
         :   WaylandSurface( width + this->DECORATIONS_BORDER_SIZE * 2, 
                             height + this->DECORATIONS_BORDER_SIZE + this->DECORATIONS_TOPBAR_SIZE, 
-                            parent)
+                            client, parent)
     {
         this->clear_colour = 0xFF00DDDD;
     }
@@ -77,13 +75,13 @@ namespace tobi_engine
     {
         WaylandSurface::resize(width + DECORATIONS_BORDER_SIZE * 2, height + DECORATIONS_TOPBAR_SIZE + DECORATIONS_BORDER_SIZE);
     }
-    ContentSurface::ContentSurface(uint32_t width, uint32_t height, const WaylandSurface *parent)
-        :   WaylandSurface(width, height, parent)
+    ContentSurface::ContentSurface(uint32_t width, uint32_t height, WaylandClient *client, const WaylandSurface *parent)
+        :   WaylandSurface(width, height, client, parent)
     {
         this->clear_colour = 0xFFFFFFFF;
     }
-    CursorSurface::CursorSurface(uint32_t width, uint32_t height, const WaylandSurface *parent)
-        :   WaylandSurface(width, height, parent)
+    CursorSurface::CursorSurface(uint32_t width, uint32_t height, WaylandClient *client, const WaylandSurface *parent)
+        :   WaylandSurface(width, height, client, parent)
     {
         this->clear_colour = 0xFFFF0000;
     }

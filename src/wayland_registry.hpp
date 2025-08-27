@@ -3,16 +3,12 @@
 #include "wayland_types.hpp"
 #include "utils/logger.hpp"
 
-#include <optional>
-#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <cstdint>
 #include <variant>
 #include <wayland-client-protocol.h>
 #include <wayland-util.h>
-#include <format>
-
 
 namespace tobi_engine 
 {

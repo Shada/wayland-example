@@ -1,8 +1,11 @@
 #pragma once
 
+#include "wayland_client.hpp"
 #include "wayland_types.hpp"
 #include "wayland_surface_buffer.hpp"
+
 #include <cstdint>
+
 namespace tobi_engine
 {
     using SurfaceBufferPtr = std::unique_ptr<SurfaceBuffer>;
@@ -11,7 +14,7 @@ namespace tobi_engine
     public:
         enum class Type { Decoration, Content, Popup, Overlay, Cursor };
 
-        WaylandSurface(uint32_t width, uint32_t height, const WaylandSurface *parent = nullptr);
+        WaylandSurface(uint32_t width, uint32_t height, WaylandClient *client, const WaylandSurface *parent = nullptr);
         WaylandSurface(WaylandSurface &&) = default;
         WaylandSurface(const WaylandSurface &) = delete;
         WaylandSurface &operator=(WaylandSurface &&) = default;
@@ -43,13 +46,15 @@ namespace tobi_engine
         static const uint32_t WINDOW_MINIMUM_SIZE = 10;
 
     private:
-        void create_subsurface(const WaylandSurface *parent);        
+        void create_subsurface(const WaylandSurface *parent);
+
+        WaylandClient *client;
     };
 
     class DecorationSurface : public WaylandSurface 
     {
     public:
-        DecorationSurface(uint32_t width, uint32_t height, const WaylandSurface *parent = nullptr);
+        DecorationSurface(uint32_t width, uint32_t height, WaylandClient *client, const WaylandSurface *parent = nullptr);
         Type get_type() const override { return Type::Decoration; }
         // Decoration-specific members...
 
@@ -62,7 +67,7 @@ namespace tobi_engine
     class ContentSurface : public WaylandSurface 
     {
     public:
-        ContentSurface(uint32_t width, uint32_t height, const WaylandSurface *parent = nullptr);
+        ContentSurface(uint32_t width, uint32_t height, WaylandClient *client, const WaylandSurface *parent = nullptr);
         Type get_type() const override { return Type::Content; }
         // Decoration-specific members...
 
@@ -72,7 +77,7 @@ namespace tobi_engine
     class CursorSurface : public WaylandSurface 
     {
     public:
-        CursorSurface(uint32_t width, uint32_t height, const WaylandSurface *parent = nullptr);
+        CursorSurface(uint32_t width, uint32_t height, WaylandClient *client, const WaylandSurface *parent = nullptr);
         Type get_type() const override { return Type::Cursor; }
         // Decoration-specific members...
 

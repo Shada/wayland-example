@@ -1,8 +1,9 @@
 #pragma once
 
-#include <cstdint>
-
+#include "wayland_client.hpp"
 #include "wayland_types.hpp"
+
+#include <cstdint>
 
 namespace tobi_engine
 {
@@ -10,7 +11,8 @@ namespace tobi_engine
     class SurfaceBuffer
     {
         public:
-            SurfaceBuffer(uint32_t width, uint32_t height);
+        
+            SurfaceBuffer(uint32_t width, uint32_t height, WaylandClient *client);
             ~SurfaceBuffer();
 
             int32_t get_fd() const;
@@ -29,6 +31,8 @@ namespace tobi_engine
             void create_shared_memory();
             void create_buffer();
 
+            WaylandClient *client;
+            
             int32_t file_descriptor;
             uint32_t width;
             uint32_t height;

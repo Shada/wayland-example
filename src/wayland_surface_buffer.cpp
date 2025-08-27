@@ -18,12 +18,13 @@
 namespace tobi_engine
 {
 
-    SurfaceBuffer::SurfaceBuffer(uint32_t width, uint32_t height) 
+    SurfaceBuffer::SurfaceBuffer(uint32_t width, uint32_t height, WaylandClient *client) 
         :   file_descriptor(-1),
             width(width),
             height(height),
             size(height * width * PIXEL_SIZE),
-            memory(nullptr)
+            memory(nullptr),
+            client(client)
     {
         LOG_DEBUG("width = {}, height = {}", width, height);
         initialize();
@@ -105,8 +106,7 @@ namespace tobi_engine
 
     void SurfaceBuffer::create_buffer()
     {
-        auto &client = WaylandClient::get_instance();
-        auto shm = client.get_shm();
+        auto shm = client->get_shm();
         if (!shm)
         {
             throw std::runtime_error("Failed to get Wayland SHM");

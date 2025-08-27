@@ -2,6 +2,7 @@
 
 #include "wayland_registry.hpp"
 #include "wayland_types.hpp"
+#include "window.hpp"
 
 namespace tobi_engine
 {
@@ -16,6 +17,7 @@ namespace tobi_engine
     class WaylandInputManager
     {
     public:
+
         explicit WaylandInputManager(const WaylandRegistry* registry);
         WaylandInputManager() = delete;
         ~WaylandInputManager() = default;
@@ -60,6 +62,11 @@ namespace tobi_engine
          * @param state Pointer to the XKB state.
          */
         void set_kb_state(xkb_state* state) { kb_state = XkbStatePtr(state); }
+
+        void set_keyboard_active_window(Window* window);
+        void set_pointer_active_window(Window* window);
+        void unset_keyboard_active_window();
+        void unset_pointer_active_window();
         
     private:
 
@@ -88,6 +95,9 @@ namespace tobi_engine
         XkbKeymapPtr kb_keymap;
         XkbStatePtr kb_state;
 
+        Window* keyboard_active_window = nullptr;
+        Window* pointer_active_window = nullptr;
+        
     };
 
 }

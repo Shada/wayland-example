@@ -1,14 +1,13 @@
 #include "wayland_cursor.hpp"
+
 #include "utils/logger.hpp"
-
 #include "wayland_client.hpp"
-#include "wayland_types.hpp"
 
-#include <cstdlib>
-#include <memory>
-#include <optional>
 #include <wayland-client-protocol.h>
 #include <wayland-cursor.h>
+
+#include <cstdlib>
+#include <optional>
 
 
 namespace tobi_engine
@@ -54,6 +53,7 @@ namespace tobi_engine
             return std::nullopt;
         }
     }
+    
     std::optional<std::string> get_cursor_theme_from_env()
     {
         auto cursor_theme = DEFAULT_CURSOR_THEME_ENV;
@@ -67,19 +67,18 @@ namespace tobi_engine
         return std::string(cursor_theme);
     }
 
-    WaylandCursor::WaylandCursor() 
+    WaylandCursor::WaylandCursor(WaylandClient *client) 
         :   current_cursor_name(DEFAULT_CURSOR),
-            cursor_size(0)
+            cursor_size(0),
+            client(client)
     {
-        auto& client = WaylandClient::get_instance();
-        
         cursor_size = get_cursor_size_from_env().value_or(DEFAULT_CURSOR_SIZE);
         LOG_DEBUG("Cursor size set to: {}", cursor_size);
                 
         current_theme_name = get_cursor_theme_from_env().value_or(DEFAULT_CURSOR_THEME);
         LOG_DEBUG("Cursor theme set to: {}", current_theme_name);
-        
-        auto shm = client.get_shm();
+
+        auto shm = client->get_shm();
         if (!shm)
         {
             LOG_ERROR("Failed to get Wayland SHM");
@@ -89,7 +88,7 @@ namespace tobi_engine
         if (!theme) 
             throw std::runtime_error("Failed to load Wayland cursor theme " + current_theme_name);
 
-        auto compositor = client.get_compositor();
+        auto compositor = client->get_compositor();
         if (!compositor)
         {
             LOG_ERROR("Failed to get Wayland compositor");
@@ -102,8 +101,6 @@ namespace tobi_engine
 
     void WaylandCursor::draw()
     {
-        auto& client = WaylandClient::get_instance();
-
         wl_cursor *cursor;
         if(cursors.contains(current_cursor_name))
         {
@@ -132,7 +129,7 @@ namespace tobi_engine
             return;
         }
 
-        auto input_manager = client.get_input_manager();
+        auto input_manager = client->get_input_manager();
 
         wl_pointer_set_cursor(
             input_manager->get_pointer(),

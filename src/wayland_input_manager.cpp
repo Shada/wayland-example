@@ -2,13 +2,11 @@
 
 #include "utils/logger.hpp"
 #include "wayland_window.hpp"
-#include "window_registry.hpp"
 
 #include <stdexcept>
 #include <sys/mman.h>
 #include <unistd.h>
 #include <wayland-client-protocol.h>
-
 #include <expected>
 
 namespace tobi_engine
@@ -121,12 +119,13 @@ namespace tobi_engine
         if (!surface)
             return;
 
-        auto& window_registry = WindowRegistry::get_instance();
         auto window = static_cast<WaylandWindow*>(wl_surface_get_user_data(surface));
         if (!window)
             return;
-        window_registry.set_pointer_active_window(window->get_uid());
-        
+
+        auto self = static_cast<WaylandInputManager*>(data);
+        self->set_pointer_active_window(window);
+
         window->pointer_event.pointer = pointer;
         window->pointer_event.serial = serial;
         window->pointer_event.position.x = wl_fixed_to_int(x);
@@ -143,12 +142,13 @@ namespace tobi_engine
     void WaylandInputManager::pointer_leave(void *data, wl_pointer* poiner, uint32_t serial, wl_surface *surface)
     {
         LOG_DEBUG("pointer_leave()");
-        auto& window_registry = WindowRegistry::get_instance();
 
-        window_registry.unset_pointer_active_window();
+        auto self = static_cast<WaylandInputManager*>(data);
+        self->unset_pointer_active_window();
 
         if (!surface)
             return;
+
         auto window = static_cast<WaylandWindow*>(wl_surface_get_user_data(surface));
         if (!window)
             return;
@@ -165,16 +165,18 @@ namespace tobi_engine
 
     void WaylandInputManager::pointer_motion(void *data, wl_pointer* pointer, uint32_t time, wl_fixed_t x, wl_fixed_t y)
     {
-        auto& window_registry = WindowRegistry::get_instance();
+        LOG_DEBUG("pointer_motion()");
 
-        window_registry.on_pointer_motion(wl_fixed_to_int(x), wl_fixed_to_int(y));
+        auto self = static_cast<WaylandInputManager*>(data);
+        self->pointer_active_window->on_pointer_motion(wl_fixed_to_int(x), wl_fixed_to_int(y));
     }
 
     void WaylandInputManager::pointer_button(void *data, wl_pointer* poiner, uint32_t serial, uint32_t time, uint32_t button, uint32_t state)
     {
         LOG_DEBUG("pointer_button()");
-        auto& window_registry = WindowRegistry::get_instance();
-        window_registry.on_pointer_button(button, state);
+        
+        auto self = static_cast<WaylandInputManager*>(data);
+        self->pointer_active_window->on_pointer_button(button, state);
     }
 
     void WaylandInputManager::pointer_axis(void* data, wl_pointer* pointer, uint32_t time, uint32_t axis, wl_fixed_t value)
@@ -186,11 +188,11 @@ namespace tobi_engine
     void WaylandInputManager::keyboard_map(void *data, struct wl_keyboard* keyboard, uint32_t format, int32_t fd, uint32_t size) 
     {
         LOG_DEBUG("keyboard_map()");
+        
+        auto self =static_cast<WaylandInputManager*>(data);
 
         if(format != WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1)
             throw std::runtime_error("Error: Unupported keymab format, currently only XKB is supported");
-
-        auto self =static_cast<WaylandInputManager*>(data);
 
         auto keymap_shm = static_cast<char*>(mmap(nullptr, size, PROT_READ, MAP_PRIVATE, fd, 0));
 
@@ -211,27 +213,29 @@ namespace tobi_engine
     void WaylandInputManager::keyboard_enter(void *data, struct wl_keyboard* keyboard, uint32_t serial, struct wl_surface *surface, struct wl_array* keys) 
     {
         LOG_DEBUG("keyboard_enter()");
-        auto& window_registry = WindowRegistry::get_instance();
+
         auto window = static_cast<WaylandWindow*>(wl_surface_get_user_data(surface));
         
-        window_registry.set_active_window(window->get_uid());
+        auto self = static_cast<WaylandInputManager*>(data);
+        self->set_keyboard_active_window(window);
 
     }
 
     void WaylandInputManager::keyboard_leave(void *data, struct wl_keyboard* keyboard, uint32_t serial, struct wl_surface *surface) 
     {
         LOG_DEBUG("keyboard_leave()");
-        auto& window_registry = WindowRegistry::get_instance();
-        window_registry.unset_active_window();
+        
+        auto self = static_cast<WaylandInputManager*>(data);
+        self->unset_keyboard_active_window();
     }
 
     void WaylandInputManager::keyboard_key(void *data, struct wl_keyboard* keyboard, uint32_t serial, uint32_t time, uint32_t key, uint32_t state) 
     {
-        auto& window_registry = WindowRegistry::get_instance();
         LOG_DEBUG("keyboard_key() = {}", key);
         uint32_t keycode = key + 8;
 
-        window_registry.on_key(keycode, state);
+        auto self = static_cast<WaylandInputManager*>(data);
+        self->keyboard_active_window->on_key(keycode, state);
     }
 
     void WaylandInputManager::keyboard_modifiers(void *data, struct wl_keyboard* keyboard, uint32_t serial, uint32_t depressed, uint32_t latched, uint32_t locked, uint32_t group) 
@@ -239,13 +243,33 @@ namespace tobi_engine
         LOG_DEBUG("keyboard_modifiers()");
         auto self = static_cast<const WaylandInputManager*>(data);
 
-       xkb_state_update_mask(self->get_kb_state(),
+        xkb_state_update_mask(self->get_kb_state(),
                depressed, latched, locked, 0, 0, group);
     }
 
     void WaylandInputManager::keyboard_repeat(void *data, struct wl_keyboard* keyboard, int32_t rate, int32_t delay) 
     {
         LOG_DEBUG("keyboard_repeat()");
+    }
+
+    void WaylandInputManager::set_keyboard_active_window(Window *window) 
+    {
+        this->keyboard_active_window = window;
+    }
+
+    void WaylandInputManager::set_pointer_active_window(Window *window) 
+    {
+        this->pointer_active_window = window;
+    }
+
+    void WaylandInputManager::unset_keyboard_active_window() 
+    {
+        this->keyboard_active_window = nullptr;
+    }
+
+    void WaylandInputManager::unset_pointer_active_window() 
+    {
+        this->pointer_active_window = nullptr;
     }
 
 }

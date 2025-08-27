@@ -1,33 +1,21 @@
 #include "wayland_client.hpp"
 
-#include <cmath>
-#include <cstddef>
-#include <cstdint>
-#include <cstdlib>
-#include <functional>
-#include <memory>
-#include <mutex>
-#include <stdexcept>
-#include <format>
+#include "utils/logger.hpp"
+#include "wayland_input_manager.hpp"
 
-#include <string>
-#include <unordered_map>
+#include "wayland-xdg-shell-client-protocol.h"
+#include "wayland-xdg-decoration-unstable-v1-client-protocol.h"
 #include <wayland-client-core.h>
 #include <wayland-client.h>
 #include <wayland-client-protocol.h>
 #include <wayland-cursor.h>
 #include <wayland-util.h>
-#include "wayland-xdg-shell-client-protocol.h"
-#include "wayland-xdg-decoration-unstable-v1-client-protocol.h"
 #include <xkbcommon/xkbcommon.h>
 
-#include "utils/logger.hpp"
-#include "wayland_types.hpp"
-#include "window_registry.hpp"
-#include "wayland_window.hpp"
-#include "wayland_input_manager.hpp"
-
-struct wl_interface;
+#include <cmath>
+#include <cstdint>
+#include <cstdlib>
+#include <stdexcept>
 
 namespace tobi_engine
 {
@@ -41,19 +29,7 @@ namespace tobi_engine
         initialize();
     }
 
-    void WaylandClient::shell_ping(void *data, xdg_wm_base *shell, uint32_t serial) 
-    {
-        LOG_DEBUG("shell_ping()");
-        auto self = static_cast<WaylandClient*>(data);
-        if (!self)
-        {
-            LOG_ERROR("WaylandClient instance is null in shell_ping");
-            return;
-        }
-        xdg_wm_base_pong(shell, serial);
-    }
-
-    bool WaylandClient::flush()
+    auto WaylandClient::flush() -> bool
     {
         if (!display->flush())
         {
@@ -68,7 +44,7 @@ namespace tobi_engine
         return true;
     }
 
-    bool WaylandClient::update()
+    auto WaylandClient::update() -> bool
     {
         if (!display->dispatch())
         {
@@ -82,9 +58,7 @@ namespace tobi_engine
     {
         display->dispatch_pending();
         if (!display->roundtrip())
-        {
             LOG_WARNING("Failed to roundtrip Wayland display");
-        }
     }
 
     void WaylandClient::initialize()
@@ -106,8 +80,20 @@ namespace tobi_engine
             LOG_ERROR("Wayland shell is not available");
             throw std::runtime_error("Failed to initialize Wayland Client");
         }
-
     }
+
+    void WaylandClient::shell_ping(void *data, xdg_wm_base *shell, uint32_t serial) 
+    {
+        LOG_DEBUG("shell_ping()");
+        auto self = static_cast<WaylandClient*>(data);
+        if (!self)
+        {
+            LOG_ERROR("WaylandClient instance is null in shell_ping");
+            return;
+        }
+        xdg_wm_base_pong(shell, serial);
+    }
+
 
     auto WaylandClient::get_compositor() -> wl_compositor* const
     {
@@ -118,15 +104,18 @@ namespace tobi_engine
     {
         return wayland_registry->get_subcompositor();
     }
+
     auto WaylandClient::get_shell() -> xdg_wm_base* const
     {
       return wayland_registry->get_shell();
     }
+
     auto WaylandClient::get_shm() -> wl_shm* const
     {
         return wayland_registry->get_shm();
     }
-    auto WaylandClient::get_input_manager() -> WaylandInputManager* 
+
+    auto WaylandClient::get_input_manager() -> WaylandInputManager* const
     {
         return wayland_input_manager.get();
     }

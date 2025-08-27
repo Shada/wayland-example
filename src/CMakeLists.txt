@@ -1,7 +1,6 @@
 # Create wayland_window library
 add_library(wayland_window STATIC
     wayland_window.cpp
-    window_registry.cpp
     wayland_input_manager.cpp
     wayland_client.cpp
     wayland_surface_buffer.cpp
@@ -9,8 +8,9 @@ add_library(wayland_window STATIC
     wayland_cursor.cpp
     wayland_display.cpp
     wayland_registry.cpp
-    wayland_context.cpp
     window.cpp
+    window_registry.cpp
+    window_manager.cpp
     utils/logger.cpp
     utils/utils.cpp
 )
